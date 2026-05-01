@@ -51,6 +51,7 @@ function ConfigureStep() {
     () => CATALOG.find((c) => c.id === activeCategoryId) ?? CATALOG[0],
     [activeCategoryId],
   );
+  const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
   const [pendingVariant, setPendingVariant] = useState<Variant | null>(null);
   const [newSectionFor, setNewSectionFor] = useState<string | null>(null);
   const [newSectionName, setNewSectionName] = useState("");
@@ -184,7 +185,7 @@ function ConfigureStep() {
               <VariantCard
                 key={variant.id}
                 variant={variant}
-                onAdd={() => handleAddVariant(variant)}
+                onPreview={() => setPreviewVariant(variant)}
               />
             ))}
           </div>
