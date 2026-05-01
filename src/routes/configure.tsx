@@ -144,7 +144,7 @@ function ConfigureStep() {
         onGuestsChange={updateSectionGuests}
       />
 
-      <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[200px_1fr_340px] lg:gap-8 lg:py-8">
+      <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] lg:gap-10 lg:py-8">
         {/* LEFT — Categories */}
         <aside className="lg:sticky lg:top-[calc(theme(spacing.20)+theme(spacing.32))] lg:self-start">
           <p className="mb-3 px-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
@@ -252,14 +252,6 @@ function ConfigureStep() {
           </div>
         </section>
 
-        {/* RIGHT — Summary cart */}
-        <aside className="hidden lg:sticky lg:top-[calc(theme(spacing.20)+theme(spacing.32))] lg:block lg:self-start">
-          <SummaryCart
-            onContinue={() => navigate({ to: "/summary" })}
-            totalItemsCount={totalItemsCount}
-            onRemoveItem={removeItem}
-          />
-        </aside>
       </main>
 
       {/* Mobile sticky CTA */}
