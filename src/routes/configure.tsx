@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Check, Plus, Trash2, Users, X } from "lucide-react";
+import { CalendarPlus, Check, Plus, Trash2, Users } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CATALOG, findVariant, type Variant } from "@/data/catalog";
+import { CATALOG, type Variant } from "@/data/catalog";
 import { useOffer } from "@/context/OfferContext";
 import { PLN, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,6 @@ function ConfigureStep() {
     updateSectionGuests,
     setActiveSection,
     addItem,
-    removeItem,
     totals,
   } = useOffer();
 
@@ -132,7 +131,7 @@ function ConfigureStep() {
   );
 
   return (
-    <div className="bg-surface min-h-screen pb-20 lg:pb-0">
+    <div className="bg-surface min-h-screen pb-20">
       <BrandHeader right={<Stepper />} />
 
       {/* TOP BAR — Days & Sections */}
@@ -144,7 +143,7 @@ function ConfigureStep() {
         onGuestsChange={updateSectionGuests}
       />
 
-      <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[200px_1fr_340px] lg:gap-8 lg:py-8">
+      <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] lg:gap-10 lg:py-8">
         {/* LEFT — Categories */}
         <aside className="lg:sticky lg:top-[calc(theme(spacing.20)+theme(spacing.32))] lg:self-start">
           <p className="mb-3 px-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
@@ -252,26 +251,18 @@ function ConfigureStep() {
           </div>
         </section>
 
-        {/* RIGHT — Summary cart */}
-        <aside className="hidden lg:sticky lg:top-[calc(theme(spacing.20)+theme(spacing.32))] lg:block lg:self-start">
-          <SummaryCart
-            onContinue={() => navigate({ to: "/summary" })}
-            totalItemsCount={totalItemsCount}
-            onRemoveItem={removeItem}
-          />
-        </aside>
       </main>
 
-      {/* Mobile sticky CTA */}
-      <div className="bg-surface-elevated/95 border-border-soft fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur lg:hidden">
-        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3">
+      {/* Sticky bottom bar — total + continue */}
+      <div className="bg-surface-elevated/95 border-border-soft fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur">
+        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div>
             <p className="text-xs text-muted-foreground">
               {totalItemsCount} {totalItemsCount === 1 ? "pozycja" : "pozycji"} ·{" "}
               {totalSectionsCount} {totalSectionsCount === 1 ? "sekcja" : "sekcji"}
             </p>
             <p className="font-serif text-lg font-medium text-foreground">
-              {PLN.format(totals.brutto)}
+              {PLN.format(totals.brutto)} <span className="text-muted-foreground text-xs font-normal">brutto</span>
             </p>
           </div>
           <Button
@@ -463,124 +454,6 @@ function ConfigureStep() {
       </Dialog>
     </div>
   );
-
-  function SummaryCart({
-    onContinue,
-    totalItemsCount,
-    onRemoveItem,
-  }: {
-    onContinue: () => void;
-    totalItemsCount: number;
-    onRemoveItem: (sectionId: string, itemId: string) => void;
-  }) {
-    return (
-      <div className="bg-surface-elevated border-border-soft flex max-h-[calc(100vh-12rem)] flex-col rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-32px_rgba(0,0,0,0.1)]">
-        <div className="border-border-soft border-b px-5 py-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            Podsumowanie
-          </p>
-          <h3 className="mt-1 font-serif text-xl font-medium text-foreground">
-            {state.contact.eventName || "Twój event"}
-          </h3>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {totalItemsCount === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Brak pozycji. Utwórz sekcję i dodaj menu z lewej strony.
-            </p>
-          ) : (
-            state.days.map((d) => {
-              if (d.sections.every((s) => s.items.length === 0)) return null;
-              return (
-                <div key={d.date} className="mb-4 last:mb-0">
-                  <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-foreground">
-                    {formatDateShort(d.date)}
-                  </p>
-                  {d.sections.map((sec) => {
-                    if (sec.items.length === 0) return null;
-                    return (
-                      <div key={sec.id} className="mb-3">
-                        <p className="text-xs font-medium text-foreground">
-                          {sec.name}{" "}
-                          <span className="text-muted-foreground font-normal">
-                            · {sec.guests} os.
-                          </span>
-                        </p>
-                        <ul className="mt-1 space-y-1">
-                          {sec.items.map((it) => {
-                            const found = findVariant(it.variantId);
-                            if (!found) return null;
-                            const { variant } = found;
-                            const lineTotal =
-                              variant.pricePerGuest * it.guests * (1 + variant.vatRate);
-                            return (
-                              <li
-                                key={it.id}
-                                className="flex items-center justify-between gap-2 text-xs"
-                              >
-                                <span className="text-foreground truncate">
-                                  {variant.name}
-                                </span>
-                                <div className="flex shrink-0 items-center gap-1.5">
-                                  <span className="text-muted-foreground tabular-nums">
-                                    {PLN.format(lineTotal)}
-                                  </span>
-                                  <button
-                                    onClick={() => onRemoveItem(sec.id, it.id)}
-                                    className="text-muted-foreground hover:text-destructive"
-                                    aria-label="Usuń"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        <div className="border-border-soft bg-surface-sunken/50 border-t px-5 py-4">
-          <div className="mb-3 space-y-1 text-xs text-muted-foreground">
-            <div className="flex justify-between">
-              <span>Netto</span>
-              <span className="tabular-nums">{PLN.format(totals.netto)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>VAT</span>
-              <span className="tabular-nums">{PLN.format(totals.vat)}</span>
-            </div>
-          </div>
-          <div className="mb-4 flex items-baseline justify-between">
-            <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Razem</span>
-            <span className="font-serif text-2xl font-medium text-foreground tabular-nums">
-              {PLN.format(totals.brutto)}
-            </span>
-          </div>
-          <Button
-            onClick={onContinue}
-            disabled={totalItemsCount === 0}
-            className="bg-accent text-accent-foreground hover:bg-accent-muted w-full"
-          >
-            Dalej — podsumowanie →
-          </Button>
-          <Link
-            to="/"
-            className="mt-2 block text-center text-xs text-muted-foreground hover:text-foreground"
-          >
-            ← wróć do danych
-          </Link>
-        </div>
-      </div>
-    );
-  }
 }
 
 function SectionsTopBar({
