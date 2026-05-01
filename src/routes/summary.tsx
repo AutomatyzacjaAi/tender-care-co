@@ -3,7 +3,7 @@ import { Printer, Send, Pencil } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
-import { useOffer } from "@/context/OfferContext";
+import { useOffer, type Section, type SectionItem } from "@/context/OfferContext";
 import { findVariant, VAT_LABEL } from "@/data/catalog";
 import { PLN_DETAILED, formatDateLong, addDaysISO } from "@/lib/format";
 import { toast } from "sonner";
