@@ -257,17 +257,31 @@ function ConfigureStep() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {activeCategory.variants.map((variant) => (
-              <VariantCard
-                key={variant.id}
-                variant={variant}
-                onPreview={() => setPreviewVariant(variant)}
-                onAdd={() => handleAddVariant(variant)}
-                canAdd={!!activeSection}
-              />
-            ))}
-          </div>
+          {activeCategory.id === "coffee-break" ? (
+            <div className="bg-surface-elevated border-border-soft divide-border-soft divide-y overflow-hidden rounded-2xl border">
+              {activeCategory.variants.map((variant, i) => (
+                <VariantAccordionRow
+                  key={variant.id}
+                  variant={variant}
+                  index={i + 1}
+                  onAdd={() => handleAddVariant(variant)}
+                  canAdd={!!activeSection}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {activeCategory.variants.map((variant) => (
+                <VariantCard
+                  key={variant.id}
+                  variant={variant}
+                  onPreview={() => setPreviewVariant(variant)}
+                  onAdd={() => handleAddVariant(variant)}
+                  canAdd={!!activeSection}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
       </main>
