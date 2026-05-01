@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useOffer } from "@/context/OfferContext";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Krok 1 — Dane wydarzenia · Jurek Catering" },
