@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { findVariant } from "@/data/catalog";
-import { eachDayBetween } from "@/lib/format";
 
 export type ContactInfo = {
   fullName: string;
@@ -24,12 +23,12 @@ export type Section = {
   id: string;
   name: string;
   time: string; // optional HH:MM
-  guests: number; // szacowana liczba os w sekcji — domyślna dla wszystkich pozycji
+  guests: number;
   items: SectionItem[];
 };
 
 export type EventDay = {
-  date: string; // YYYY-MM-DD
+  index: number; // 1-based ordinal: Dzień 1, Dzień 2…
   sections: Section[];
 };
 
@@ -51,7 +50,7 @@ const EMPTY_CONTACT: ContactInfo = {
   defaultGuests: 100,
 };
 
-const STORAGE_KEY = "jurek_offer_v1";
+const STORAGE_KEY = "jurek_offer_v2";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -60,8 +59,10 @@ function uid() {
 type Ctx = {
   state: OfferState;
   setContact: (c: ContactInfo) => void;
-  syncDaysFromContact: () => void;
-  addSection: (date: string, name: string, guests: number, time?: string) => string;
+  ensureDefaultDay: () => void;
+  addDay: () => number;
+  removeDay: (index: number) => void;
+  addSection: (dayIndex: number, name: string, guests: number, time?: string) => string;
   renameSection: (sectionId: string, name: string, time?: string) => void;
   updateSectionGuests: (sectionId: string, guests: number) => void;
   removeSection: (sectionId: string) => void;
@@ -108,26 +109,62 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, contact }));
   }, []);
 
-  const syncDaysFromContact = useCallback(() => {
+  const ensureDefaultDay = useCallback(() => {
     setState((s) => {
-      const dates = eachDayBetween(s.contact.startDate, s.contact.endDate);
-      const existing = new Map(s.days.map((d) => [d.date, d]));
-      const days: EventDay[] = dates.map((date) => existing.get(date) ?? { date, sections: [] });
-      return { ...s, days };
+      if (s.days.length > 0) return s;
+      return { ...s, days: [{ index: 1, sections: [] }] };
     });
   }, []);
 
-  const addSection = useCallback((date: string, name: string, guests: number, time?: string) => {
+  const addDay = useCallback(() => {
+    let newIndex = 1;
+    setState((s) => {
+      newIndex = s.days.length === 0 ? 1 : Math.max(...s.days.map((d) => d.index)) + 1;
+      return { ...s, days: [...s.days, { index: newIndex, sections: [] }] };
+    });
+    return newIndex;
+  }, []);
+
+  const removeDay = useCallback((index: number) => {
+    setState((s) => {
+      const filtered = s.days.filter((d) => d.index !== index);
+      // re-number to keep contiguous 1..N
+      const reIndexed = filtered.map((d, i) => ({ ...d, index: i + 1 }));
+      const removedIds = new Set(
+        s.days.find((d) => d.index === index)?.sections.map((sec) => sec.id) ?? [],
+      );
+      return {
+        ...s,
+        days: reIndexed,
+        activeSectionId:
+          s.activeSectionId && removedIds.has(s.activeSectionId) ? null : s.activeSectionId,
+      };
+    });
+  }, []);
+
+  const addSection = useCallback((dayIndex: number, name: string, guests: number, time?: string) => {
     const id = uid();
     setState((s) => {
       const days = s.days.map((d) =>
-        d.date === date
+        d.index === dayIndex
           ? { ...d, sections: [...d.sections, { id, name, time: time ?? "", guests, items: [] }] }
           : d,
       );
       return { ...s, days, activeSectionId: id };
     });
     return id;
+  }, []);
+
+  const renameSection = useCallback((sectionId: string, name: string, time?: string) => {
+    setState((s) => ({
+      ...s,
+      days: s.days.map((d) => ({
+        ...d,
+        sections: d.sections.map((sec) =>
+          sec.id === sectionId ? { ...sec, name, time: time ?? sec.time } : sec,
+        ),
+      })),
+    }));
   }, []);
 
   const updateSectionGuests = useCallback((sectionId: string, guests: number) => {
@@ -140,22 +177,9 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
             ? {
                 ...sec,
                 guests: Math.max(1, guests),
-                // propaguj do wszystkich pozycji w sekcji
                 items: sec.items.map((it) => ({ ...it, guests: Math.max(1, guests) })),
               }
             : sec,
-        ),
-      })),
-    }));
-  }, []);
-
-  const renameSection = useCallback((sectionId: string, name: string, time?: string) => {
-    setState((s) => ({
-      ...s,
-      days: s.days.map((d) => ({
-        ...d,
-        sections: d.sections.map((sec) =>
-          sec.id === sectionId ? { ...sec, name, time: time ?? sec.time } : sec,
         ),
       })),
     }));
@@ -249,10 +273,7 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
           const found = findVariant(it.variantId);
           if (!found) continue;
           const { variant } = found;
-          const lineNet =
-            variant.pricingUnit === "per_guest"
-              ? variant.pricePerGuest * it.guests
-              : variant.pricePerGuest * it.guests; // for per_unit, "guests" stores quantity
+          const lineNet = variant.pricePerGuest * it.guests;
           const lineVat = lineNet * variant.vatRate;
           netto += lineNet;
           vat += lineVat;
@@ -269,7 +290,9 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
   const value: Ctx = {
     state,
     setContact,
-    syncDaysFromContact,
+    ensureDefaultDay,
+    addDay,
+    removeDay,
     addSection,
     renameSection,
     updateSectionGuests,
