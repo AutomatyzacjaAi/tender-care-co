@@ -135,6 +135,19 @@ function ConfigureStep() {
       {/* TOP BAR — Days & Sections */}
       <SectionsTopBar
         onAddSection={openNewSection}
+        onAddDay={() => {
+          const idx = addDay();
+          toast.success(`Dodano Dzień ${idx}`);
+        }}
+        onRemoveDay={(idx) => {
+          if (state.days.length <= 1) {
+            toast.error("Musi pozostać co najmniej jeden dzień.");
+            return;
+          }
+          if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
+            removeDay(idx);
+          }
+        }}
         activeSectionId={activeSectionId}
         onSelect={(id) => setActiveSection(id)}
         onRemove={removeSection}
@@ -217,7 +230,7 @@ function ConfigureStep() {
                 <Users className="h-4 w-4" />
                 <span>{activeSection.section.guests} os.</span>
                 <span className="text-border mx-1">·</span>
-                <span>{formatDateShort(activeSection.date)}</span>
+                <span>Dzień {activeSection.dayIndex}</span>
               </div>
             </div>
           ) : (
@@ -364,7 +377,7 @@ function ConfigureStep() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Nowa sekcja — {newSectionFor && formatDateShort(newSectionFor)}
+              Nowa sekcja — Dzień {newSectionFor}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
