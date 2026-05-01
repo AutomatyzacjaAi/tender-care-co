@@ -266,7 +266,7 @@ function ConfigureStep() {
                   variant={variant}
                   index={i + 1}
                   onAdd={(menuId) => handleAddVariant(variant, menuId)}
-                  canAdd={!!activeSection}
+                  canAdd={mounted && !!activeSection}
                 />
               ))}
             </div>
@@ -278,7 +278,7 @@ function ConfigureStep() {
                   variant={variant}
                   onPreview={() => setPreviewVariant(variant)}
                   onAdd={() => handleAddVariant(variant)}
-                  canAdd={!!activeSection}
+                  canAdd={mounted && !!activeSection}
                 />
               ))}
             </div>
