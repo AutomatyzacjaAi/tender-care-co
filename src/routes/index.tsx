@@ -479,6 +479,7 @@ function SectionsTopBar({
   onAddSection,
   onAddDay,
   onRemoveDay,
+  onDateChange,
   activeSectionId,
   onSelect,
   onRemove,
@@ -487,6 +488,7 @@ function SectionsTopBar({
   onAddSection: (dayIndex: number) => void;
   onAddDay: () => void;
   onRemoveDay: (dayIndex: number) => void;
+  onDateChange: (dayIndex: number, date: string) => void;
   activeSectionId: string | null;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
@@ -513,9 +515,21 @@ function SectionsTopBar({
           {state.days.map((d) => (
             <div key={d.index} className="flex flex-wrap items-center gap-2">
               <div className="flex shrink-0 items-center gap-2 pr-2">
-                <span className="text-foreground bg-surface-sunken inline-flex h-7 min-w-[68px] items-center justify-center gap-1 rounded-full border border-border px-2.5 text-xs font-medium">
+                <span className="text-muted-foreground inline-flex h-7 items-center font-mono text-[10px] uppercase tracking-widest">
                   Dzień {d.index}
                 </span>
+                <input
+                  type="date"
+                  value={d.date ?? ""}
+                  onChange={(e) => onDateChange(d.index, e.target.value)}
+                  className={cn(
+                    "h-7 rounded-full border px-2.5 text-xs font-medium tabular-nums transition-colors",
+                    d.date
+                      ? "border-accent/40 bg-accent-soft text-accent"
+                      : "border-dashed border-border bg-surface-sunken text-muted-foreground hover:border-accent/40",
+                  )}
+                  aria-label={`Data dla Dnia ${d.index}`}
+                />
                 {state.days.length > 1 && (
                   <button
                     onClick={() => onRemoveDay(d.index)}
