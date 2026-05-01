@@ -298,7 +298,7 @@ function DayRows({
   rows,
 }: {
   dateLabel: string;
-  rows: { section: { name: string; time: string }; item: { id: string; variantId: string; guests: number } }[];
+  rows: { section: Section; item: SectionItem }[];
 }) {
   return (
     <>
