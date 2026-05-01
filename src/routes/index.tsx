@@ -116,13 +116,14 @@ function ConfigureStep() {
     setNewSectionTime("");
   }
 
-  function handleAddVariant(variant: Variant) {
+  function handleAddVariant(variant: Variant, menuId?: string) {
     if (!activeSectionId) {
       toast.error("Najpierw utwórz lub wybierz sekcję na górze strony.");
       return;
     }
-    addItem(activeSectionId, variant.id);
-    toast.success(`Dodano: ${variant.name}`);
+    addItem(activeSectionId, variant.id, menuId);
+    const menuName = menuId ? variant.menus.find((m) => m.id === menuId)?.name : undefined;
+    toast.success(`Dodano: ${variant.name}${menuName ? ` · ${menuName}` : ""}`);
   }
 
   const totalSectionsCount = state.days.reduce((acc, d) => acc + d.sections.length, 0);
