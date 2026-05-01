@@ -159,9 +159,11 @@ function SummaryStep() {
               )}
               <div className="space-y-4">
                 {state.days.map((d) => {
-                  const iso = state.contact.startDate
-                    ? addDaysISO(state.contact.startDate, d.index - 1)
-                    : "";
+                  const iso = d.date
+                    ? d.date
+                    : state.contact.startDate
+                      ? addDaysISO(state.contact.startDate, d.index - 1)
+                      : "";
                   const dayLabel = iso
                     ? capitalize(formatDateLong(iso))
                     : `Dzień ${d.index}`;
@@ -217,9 +219,11 @@ function SummaryStep() {
                         s.items.map((it) => ({ section: s, item: it })),
                       );
                       if (dayItems.length === 0) return null;
-                      const iso = state.contact.startDate
-                        ? addDaysISO(state.contact.startDate, d.index - 1)
-                        : "";
+                      const iso = d.date
+                        ? d.date
+                        : state.contact.startDate
+                          ? addDaysISO(state.contact.startDate, d.index - 1)
+                          : "";
                       const dateLabel = iso
                         ? capitalize(formatDateLong(iso))
                         : `Dzień ${d.index}`;
