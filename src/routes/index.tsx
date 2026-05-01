@@ -469,12 +469,16 @@ function ConfigureStep() {
 
 function SectionsTopBar({
   onAddSection,
+  onAddDay,
+  onRemoveDay,
   activeSectionId,
   onSelect,
   onRemove,
   onGuestsChange,
 }: {
-  onAddSection: (date: string) => void;
+  onAddSection: (dayIndex: number) => void;
+  onAddDay: () => void;
+  onRemoveDay: (dayIndex: number) => void;
   activeSectionId: string | null;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
@@ -485,116 +489,118 @@ function SectionsTopBar({
   return (
     <div className="bg-surface-elevated/80 border-border-soft sticky top-16 z-30 border-b backdrop-blur">
       <div className="mx-auto w-full max-w-[1400px] px-4 py-4 sm:px-6">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            Sekcje wydarzenia
+            Plan wydarzenia
           </p>
-          <p className="text-[11px] text-muted-foreground">
-            Wybierz sekcję, do której dodajesz menu z dołu
-          </p>
+          <button
+            onClick={onAddDay}
+            className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-xs font-medium transition-colors"
+          >
+            <CalendarPlus className="h-3 w-3" />
+            dodaj dzień
+          </button>
         </div>
-        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
-          {state.days.map((d, idx) => (
-            <div key={d.date} className="flex shrink-0 flex-col gap-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Dzień {idx + 1}
+        <div className="-mx-4 flex flex-col gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
+          {state.days.map((d) => (
+            <div key={d.index} className="flex flex-wrap items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2 pr-2">
+                <span className="text-foreground bg-surface-sunken inline-flex h-7 min-w-[68px] items-center justify-center gap-1 rounded-full border border-border px-2.5 text-xs font-medium">
+                  Dzień {d.index}
                 </span>
-                <span className="text-foreground text-xs font-medium">
-                  {formatDateShort(d.date)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {d.sections.length === 0 && (
-                  <span className="text-muted-foreground text-xs italic">brak sekcji</span>
+                {state.days.length > 1 && (
+                  <button
+                    onClick={() => onRemoveDay(d.index)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label={`Usuń Dzień ${d.index}`}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
                 )}
-                {d.sections.map((sec) => {
-                  const isActive = sec.id === activeSectionId;
-                  return (
-                    <div
-                      key={sec.id}
-                      className={cn(
-                        "group flex shrink-0 items-stretch overflow-hidden rounded-full border transition-colors",
-                        isActive
-                          ? "border-accent bg-accent text-accent-foreground"
-                          : "border-border bg-surface text-foreground hover:border-accent/50",
-                      )}
+              </div>
+              {d.sections.length === 0 && (
+                <span className="text-muted-foreground text-xs italic">brak sekcji</span>
+              )}
+              {d.sections.map((sec) => {
+                const isActive = sec.id === activeSectionId;
+                return (
+                  <div
+                    key={sec.id}
+                    className={cn(
+                      "group flex shrink-0 items-stretch overflow-hidden rounded-full border transition-colors",
+                      isActive
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-border bg-surface text-foreground hover:border-accent/50",
+                    )}
+                  >
+                    <button
+                      onClick={() => onSelect(sec.id)}
+                      className="flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-xs font-medium"
                     >
-                      <button
-                        onClick={() => onSelect(sec.id)}
-                        className="flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-xs font-medium"
-                      >
-                        {isActive && <Check className="h-3 w-3" />}
-                        <span>{sec.name}</span>
-                        {sec.time && (
-                          <span
-                            className={cn(
-                              "text-[10px]",
-                              isActive ? "text-accent-foreground/80" : "text-muted-foreground",
-                            )}
-                          >
-                            {sec.time}
-                          </span>
-                        )}
-                      </button>
-                      <div
-                        className={cn(
-                          "flex items-center gap-0.5 border-l px-1.5",
-                          isActive ? "border-accent-foreground/20" : "border-border",
-                        )}
-                      >
-                        <Users
+                      {isActive && <Check className="h-3 w-3" />}
+                      <span>{sec.name}</span>
+                      {sec.time && (
+                        <span
                           className={cn(
-                            "h-3 w-3",
+                            "text-[10px]",
                             isActive ? "text-accent-foreground/80" : "text-muted-foreground",
                           )}
-                        />
-                        <input
-                          type="number"
-                          min={1}
-                          value={sec.guests}
-                          onChange={(e) =>
-                            onGuestsChange(sec.id, Number(e.target.value) || 1)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          className={cn(
-                            "w-10 bg-transparent text-center text-xs tabular-nums focus:outline-none",
-                            isActive ? "text-accent-foreground" : "text-foreground",
-                          )}
-                        />
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Usunąć sekcję "${sec.name}"?`)) onRemove(sec.id);
-                        }}
+                        >
+                          {sec.time}
+                        </span>
+                      )}
+                    </button>
+                    <div
+                      className={cn(
+                        "flex items-center gap-0.5 border-l px-1.5",
+                        isActive ? "border-accent-foreground/20" : "border-border",
+                      )}
+                    >
+                      <Users
                         className={cn(
-                          "border-l px-2 transition-colors",
-                          isActive
-                            ? "border-accent-foreground/20 text-accent-foreground/70 hover:text-accent-foreground"
-                            : "border-border text-muted-foreground hover:text-destructive",
+                          "h-3 w-3",
+                          isActive ? "text-accent-foreground/80" : "text-muted-foreground",
                         )}
-                        aria-label="Usuń sekcję"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        value={sec.guests}
+                        onChange={(e) => onGuestsChange(sec.id, Number(e.target.value) || 1)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "w-10 bg-transparent text-center text-xs tabular-nums focus:outline-none",
+                          isActive ? "text-accent-foreground" : "text-foreground",
+                        )}
+                      />
                     </div>
-                  );
-                })}
-                <button
-                  onClick={() => onAddSection(d.date)}
-                  className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex shrink-0 items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors"
-                >
-                  <Plus className="h-3 w-3" />
-                  dodaj sekcję
-                </button>
-              </div>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Usunąć sekcję "${sec.name}"?`)) onRemove(sec.id);
+                      }}
+                      className={cn(
+                        "border-l px-2 transition-colors",
+                        isActive
+                          ? "border-accent-foreground/20 text-accent-foreground/70 hover:text-accent-foreground"
+                          : "border-border text-muted-foreground hover:text-destructive",
+                      )}
+                      aria-label="Usuń sekcję"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                onClick={() => onAddSection(d.index)}
+                className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex shrink-0 items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                dodaj sekcję
+              </button>
             </div>
           ))}
         </div>
-        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <CalendarPlus className="h-3 w-3" />
-          Aby dodać kolejny dzień, zmień zakres dat w kroku 1.
-        </p>
       </div>
     </div>
   );
