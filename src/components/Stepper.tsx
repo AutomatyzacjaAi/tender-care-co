@@ -17,43 +17,48 @@ export function Stepper() {
 
   return (
     <nav aria-label="Kroki kreatora" className="w-full">
-      <ol className="flex items-center justify-center gap-2 sm:gap-6">
+      <ol className="flex items-center justify-center gap-2 sm:gap-4">
         {steps.map((step, idx) => {
           const isDone = idx < currentIndex;
           const isActive = idx === currentIndex;
-          const Wrapper = isDone ? Link : "div";
-          return (
-            <li key={step.id} className="flex items-center gap-2 sm:gap-4">
-              <Wrapper
-                {...(isDone ? { to: step.path } : {})}
+          const content = (
+            <span className="flex items-center gap-2 sm:gap-3">
+              <span
                 className={cn(
-                  "flex items-center gap-3 rounded-full px-2 py-1 transition-colors",
-                  isDone && "hover:bg-accent-soft cursor-pointer",
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium transition-colors",
+                  isActive && "bg-accent text-accent-foreground border-accent",
+                  isDone && "bg-accent-soft text-accent border-accent/30",
+                  !isActive && !isDone && "border-border text-muted-foreground bg-transparent",
                 )}
               >
-                <span
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-medium transition-colors",
-                    isActive && "bg-accent text-accent-foreground border-accent",
-                    isDone && "bg-accent-soft text-accent border-accent/30",
-                    !isActive && !isDone && "border-border text-muted-foreground bg-transparent",
-                  )}
+                {isDone ? <Check className="h-3.5 w-3.5" /> : step.id}
+              </span>
+              <span
+                className={cn(
+                  "hidden text-xs font-medium tracking-tight sm:inline",
+                  isActive ? "text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {step.label}
+              </span>
+            </span>
+          );
+          return (
+            <li key={step.id} className="flex items-center gap-2 sm:gap-3">
+              {isDone ? (
+                <Link
+                  to={step.path}
+                  className="hover:bg-accent-soft rounded-full px-1.5 py-1 transition-colors"
                 >
-                  {isDone ? <Check className="h-4 w-4" /> : step.id}
-                </span>
-                <span
-                  className={cn(
-                    "hidden text-sm font-medium tracking-tight sm:inline",
-                    isActive ? "text-foreground" : "text-muted-foreground",
-                  )}
-                >
-                  {step.label}
-                </span>
-              </Wrapper>
+                  {content}
+                </Link>
+              ) : (
+                <span className="px-1.5 py-1">{content}</span>
+              )}
               {idx < steps.length - 1 && (
                 <span
                   className={cn(
-                    "h-px w-6 sm:w-16 transition-colors",
+                    "h-px w-5 sm:w-10 transition-colors",
                     idx < currentIndex ? "bg-accent/40" : "bg-border",
                   )}
                 />
