@@ -127,6 +127,13 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     return newIndex;
   }, []);
 
+  const setDayDate = useCallback((index: number, date: string) => {
+    setState((s) => ({
+      ...s,
+      days: s.days.map((d) => (d.index === index ? { ...d, date } : d)),
+    }));
+  }, []);
+
   const removeDay = useCallback((index: number) => {
     setState((s) => {
       const filtered = s.days.filter((d) => d.index !== index);
