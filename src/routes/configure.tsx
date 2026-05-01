@@ -244,6 +244,79 @@ function ConfigureStep() {
         </DialogContent>
       </Dialog>
 
+      {/* Variant menu preview dialog */}
+      <Dialog open={!!previewVariant} onOpenChange={(o) => !o && setPreviewVariant(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-2xl">
+          {previewVariant && (
+            <>
+              <div className="relative aspect-[16/7] w-full overflow-hidden bg-muted">
+                <img
+                  src={previewVariant.image}
+                  alt={previewVariant.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="px-6 pb-2 pt-5">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {activeCategory.name}
+                </p>
+                <DialogHeader className="mt-1 space-y-1 text-left">
+                  <DialogTitle className="font-serif text-2xl font-medium">
+                    {previewVariant.name}
+                  </DialogTitle>
+                </DialogHeader>
+                <p className="mt-2 text-sm text-muted-foreground">{previewVariant.tagline}</p>
+                <div className="border-border-soft mt-4 flex items-baseline justify-between border-t pt-4">
+                  <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    Cena
+                  </span>
+                  <div className="text-right">
+                    <span className="font-serif text-2xl font-medium text-foreground">
+                      {PLN.format(previewVariant.pricePerGuest)}
+                    </span>
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      {previewVariant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4">
+                <p className="mb-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Menu — pełny zestaw
+                </p>
+                <ul className="bg-surface-sunken/60 space-y-2 rounded-lg p-4 text-sm text-foreground">
+                  {previewVariant.menu.map((item, i) => (
+                    <li key={i} className="flex gap-2.5">
+                      <span className="text-accent mt-0.5">·</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Menu jest ustalone — klient nie wybiera pozycji indywidualnie.
+                </p>
+              </div>
+              <DialogFooter className="border-border-soft border-t bg-surface-sunken/40 px-6 py-4">
+                <Button variant="ghost" onClick={() => setPreviewVariant(null)}>
+                  Zamknij
+                </Button>
+                <Button
+                  onClick={() => {
+                    const v = previewVariant;
+                    setPreviewVariant(null);
+                    handleAddVariant(v);
+                  }}
+                  className="bg-accent text-accent-foreground hover:bg-accent-muted"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Dodaj do sekcji
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Pending variant — choose section dialog */}
       <Dialog open={!!pendingVariant} onOpenChange={(o) => !o && setPendingVariant(null)}>
         <DialogContent>
