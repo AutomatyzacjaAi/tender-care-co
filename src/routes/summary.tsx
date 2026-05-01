@@ -3,7 +3,7 @@ import { Printer, Send, Pencil } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
-import { useOffer } from "@/context/OfferContext";
+import { useOffer, type Section, type SectionItem } from "@/context/OfferContext";
 import { findVariant, VAT_LABEL } from "@/data/catalog";
 import { PLN_DETAILED, formatDateLong, addDaysISO } from "@/lib/format";
 import { toast } from "sonner";
@@ -298,7 +298,7 @@ function DayRows({
   rows,
 }: {
   dateLabel: string;
-  rows: { section: { name: string; time: string }; item: { id: string; variantId: string; guests: number } }[];
+  rows: { section: Section; item: SectionItem }[];
 }) {
   return (
     <>
@@ -311,6 +311,10 @@ function DayRows({
         const f = findVariant(item.variantId);
         if (!f) return null;
         const { variant } = f;
+        const selectedMenu = item.menuId
+          ? variant.menus.find((m) => m.id === item.menuId)
+          : variant.menus[0];
+        const showMenuName = (variant.menus.length > 1 || selectedMenu?.name !== "Menu") && selectedMenu;
         const line = variant.pricePerGuest * item.guests;
         const unit = variant.pricingUnit === "per_guest" ? "x" : "x";
         return (
@@ -321,6 +325,11 @@ function DayRows({
             </td>
             <td className="py-2 pr-3 text-neutral-900">
               <span>{variant.name}</span>
+              {showMenuName && (
+                <span className="ml-1.5 text-neutral-700">
+                  — {selectedMenu!.name}
+                </span>
+              )}
               <span className="ml-2 text-xs text-neutral-500">
                 · {section.name}
                 {section.time && ` · ${section.time}`}

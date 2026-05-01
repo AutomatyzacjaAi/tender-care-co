@@ -9,24 +9,35 @@ import extras from "@/assets/extras.jpg";
 
 export type PricingUnit = "per_guest" | "per_unit";
 
+export type MenuOption = {
+  id: string;
+  name: string; // np. "Standard", "Premium", "VIP"
+  items: string[]; // pozycje w menu
+};
+
 export type Variant = {
   id: string;
-  name: string;
+  name: string; // np. "Wariant 1"
   tagline: string;
-  pricePerGuest: number; // PLN; if pricingUnit = per_unit, treated as unit price
+  pricePerGuest: number; // PLN
   pricingUnit: PricingUnit;
-  vatRate: number; // 0.05, 0.08, 0.23
+  vatRate: number;
   image: string;
-  menu: string[]; // sztywne pozycje, podgląd
+  menus: MenuOption[]; // wybór menu w danej cenie
 };
 
 export type Category = {
   id: string;
   name: string;
-  symbol: string; // krótka „litera/emoji" dla lewej kolumny
+  symbol: string;
   description: string;
   variants: Variant[];
 };
+
+// ===== Helpers =====
+function singleMenu(items: string[]): MenuOption[] {
+  return [{ id: "default", name: "Menu", items }];
+}
 
 export const CATALOG: Category[] = [
   {
@@ -36,55 +47,143 @@ export const CATALOG: Category[] = [
     description: "Powitalna kawa, przerwy między sesjami, krótkie spotkania.",
     variants: [
       {
-        id: "cb-standard",
-        name: "Standard",
-        tagline: "Klasyczna przerwa z kawą i ciastkami.",
+        id: "cb-v1",
+        name: "Wariant 1",
+        tagline: "Klasyczna przerwa — wybierz jeden z 3 zestawów.",
         pricePerGuest: 35,
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: coffeeBreak,
-        menu: [
-          "Kawa z ekspresu (świeżo mielona)",
-          "Wybór herbat liściastych",
-          "Woda mineralna gazowana i niegazowana",
-          "Mix świeżych owoców",
-          "Drobne ciasteczka maślane",
+        menus: [
+          {
+            id: "cb-v1-standard",
+            name: "Standard",
+            items: [
+              "Kawa z ekspresu (świeżo mielona)",
+              "Wybór herbat liściastych",
+              "Woda mineralna gazowana i niegazowana",
+              "Mix świeżych owoców",
+              "Drobne ciasteczka maślane",
+            ],
+          },
+          {
+            id: "cb-v1-owocowe",
+            name: "Owocowe",
+            items: [
+              "Kawa z ekspresu",
+              "Selekcja herbat",
+              "Świeżo wyciskane soki (pomarańcza, jabłko)",
+              "Talerz świeżych owoców egzotycznych",
+              "Smoothie shoty (3 rodzaje)",
+            ],
+          },
+          {
+            id: "cb-v1-wytrawne",
+            name: "Wytrawne",
+            items: [
+              "Kawa z ekspresu",
+              "Selekcja herbat",
+              "Mini bagietki z szynką i serem",
+              "Tartinki z hummusem i warzywami",
+              "Paluszki serowe i orzechy",
+            ],
+          },
         ],
       },
       {
-        id: "cb-premium",
-        name: "Premium",
-        tagline: "Rozszerzona przerwa z mini-pâtisserie i wytrawnymi przekąskami.",
+        id: "cb-v2",
+        name: "Wariant 2",
+        tagline: "Rozszerzona przerwa — mini-pâtisserie i wytrawne dodatki.",
         pricePerGuest: 65,
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: coffeeBreak,
-        menu: [
-          "Kawa specialty + alternatywy roślinne",
-          "Selekcja herbat premium",
-          "Świeże soki tłoczone",
-          "Mini croissanty (klasyczne, czekoladowe, migdałowe)",
-          "Tartaletki owocowe i mini éclairs",
-          "Wytrawne mini-kanapki z łososiem i serem",
-          "Sezonowe owoce w eleganckiej prezentacji",
+        menus: [
+          {
+            id: "cb-v2-premium",
+            name: "Premium",
+            items: [
+              "Kawa specialty + alternatywy roślinne",
+              "Selekcja herbat premium",
+              "Świeże soki tłoczone",
+              "Mini croissanty (klasyczne, czekoladowe, migdałowe)",
+              "Tartaletki owocowe i mini éclairs",
+              "Wytrawne mini-kanapki z łososiem i serem",
+              "Sezonowe owoce w eleganckiej prezentacji",
+            ],
+          },
+          {
+            id: "cb-v2-francuskie",
+            name: "Francuskie",
+            items: [
+              "Kawa specialty + alternatywy roślinne",
+              "Selekcja herbat premium",
+              "Macarons (6 smaków)",
+              "Mini éclairs i religieuse",
+              "Quiche lorraine i mini tarty",
+              "Tabliczki czekolady rzemieślniczej",
+            ],
+          },
+          {
+            id: "cb-v2-zdrowe",
+            name: "Zdrowe",
+            items: [
+              "Kawa specialty + alternatywy roślinne",
+              "Herbaty ziołowe i zielone",
+              "Smoothie bowls (3 rodzaje)",
+              "Granola z jogurtem i owocami",
+              "Energy balls i raw cakes",
+              "Świeże owoce sezonowe",
+            ],
+          },
         ],
       },
       {
-        id: "cb-vip",
-        name: "VIP",
-        tagline: "Pełna stacja barista z autorską selekcją słodkości.",
+        id: "cb-v3",
+        name: "Wariant 3",
+        tagline: "Pełna stacja barista z autorską selekcją.",
         pricePerGuest: 95,
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: coffeeBreak,
-        menu: [
-          "Stacja barista z baristą na żywo",
-          "Kawa specialty z 3 alternatywnych metod (V60, Aeropress, espresso)",
-          "Matcha latte i czekolada na ciepło",
-          "Świeże soki i lemoniady autorskie",
-          "Autorska kolekcja deserów (6 rodzajów)",
-          "Wytrawna stacja śniadaniowa (jajka, awokado, łosoś)",
-          "Sezonowe owoce z całego świata",
+        menus: [
+          {
+            id: "cb-v3-vip",
+            name: "VIP",
+            items: [
+              "Stacja barista z baristą na żywo",
+              "Kawa specialty z 3 alternatywnych metod (V60, Aeropress, espresso)",
+              "Matcha latte i czekolada na ciepło",
+              "Świeże soki i lemoniady autorskie",
+              "Autorska kolekcja deserów (6 rodzajów)",
+              "Wytrawna stacja śniadaniowa (jajka, awokado, łosoś)",
+              "Sezonowe owoce z całego świata",
+            ],
+          },
+          {
+            id: "cb-v3-sniadaniowy",
+            name: "Śniadaniowy",
+            items: [
+              "Stacja barista",
+              "Świeże soki tłoczone",
+              "Stacja jajeczna live (omlety, jajka po benedyktyńsku)",
+              "Awokado tosty z łososiem",
+              "Granola, jogurty, owoce",
+              "Świeże pieczywo i pasty (3 rodzaje)",
+            ],
+          },
+          {
+            id: "cb-v3-degustacyjny",
+            name: "Degustacyjny",
+            items: [
+              "Stacja barista (3 metody parzenia)",
+              "Degustacja kaw single origin (3 kraje)",
+              "Stacja deserów autorskich (8 rodzajów)",
+              "Mini tatary i tartare z łososia",
+              "Selekcja serów i wędlin dojrzewających",
+              "Lemoniady autorskie i wody smakowe",
+            ],
+          },
         ],
       },
     ],
@@ -103,14 +202,14 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: lunch,
-        menu: [
+        menus: singleMenu([
           "Zupa dnia (krem z dyni / rosół)",
           "Pierś z kurczaka grillowana z warzywami sezonowymi",
           "Alternatywa wegetariańska: risotto z grzybami",
           "Sałatka świeża z dressingiem winegret",
           "Deser dnia (ciasto domowe)",
           "Woda, kawa, herbata",
-        ],
+        ]),
       },
       {
         id: "lunch-business",
@@ -120,7 +219,7 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: lunch,
-        menu: [
+        menus: singleMenu([
           "Przystawka: tatar wołowy lub burrata z pomidorami",
           "Zupa: krem z białych warzyw z truflami",
           "Danie główne (do wyboru): polędwica wołowa / dorsz pieczony / gnocchi z dynią",
@@ -128,7 +227,7 @@ export const CATALOG: Category[] = [
           "Deser autorski (panna cotta, mus czekoladowy)",
           "Selekcja kaw specialty i herbat",
           "Wody butelkowane premium",
-        ],
+        ]),
       },
     ],
   },
@@ -146,14 +245,14 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: galaDinner,
-        menu: [
+        menus: singleMenu([
           "Powitanie: lampka prosecco + kanapeczki",
           "Przystawka: carpaccio wołowe z parmezanem",
           "Zupa: bulion z kołdunami",
           "Danie główne: pierś z kaczki z purée z selera",
           "Deser: tarta cytrynowa z bezą",
           "Woda, kawa, herbata, wino do kolacji",
-        ],
+        ]),
       },
       {
         id: "gala-prestige",
@@ -163,7 +262,7 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: galaDinner,
-        menu: [
+        menus: singleMenu([
           "Aperitif: koktajl powitalny + kanapki autorskie",
           "Amuse-bouche szefa kuchni",
           "Przystawka: foie gras lub łosoś w trzech odsłonach",
@@ -172,7 +271,7 @@ export const CATALOG: Category[] = [
           "Selekcja serów francuskich",
           "Deser: autorska kompozycja patissera",
           "Pełna karta win z sommelierem",
-        ],
+        ]),
       },
     ],
   },
@@ -190,7 +289,7 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: buffet,
-        menu: [
+        menus: singleMenu([
           "Sekcja zimna: wędliny dojrzewające, sery, pasztety",
           "5 sałatek autorskich",
           "Sekcja ciepła: 3 dania mięsne + 1 rybne + 1 wege",
@@ -198,7 +297,7 @@ export const CATALOG: Category[] = [
           "Pieczywo rzemieślnicze i masła smakowe",
           "Stół deserowy: 6 rodzajów",
           "Bar bezalkoholowy (woda, soki, kawa, herbata)",
-        ],
+        ]),
       },
       {
         id: "buffet-grand",
@@ -208,7 +307,7 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: buffet,
-        menu: [
+        menus: singleMenu([
           "Stacja serów dojrzewających z miodami i konfiturami",
           "Stacja sushi (uwijane na żywo)",
           "Stacja live: risotto / pasta z sosem trufla",
@@ -217,7 +316,7 @@ export const CATALOG: Category[] = [
           "Bufet sałatkowy (8 rodzajów)",
           "Stacja deserów z patisserem",
           "Bar bezalkoholowy premium",
-        ],
+        ]),
       },
     ],
   },
@@ -235,13 +334,13 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: cocktail,
-        menu: [
+        menus: singleMenu([
           "6 rodzajów finger food (4 zimne, 2 ciepłe)",
           "Mini-kanapki autorskie",
           "Tartaletki z mascarpone i owocami",
           "Bar bezalkoholowy: woda, soki, lemoniady",
           "Kawa, herbata po recepcji",
-        ],
+        ]),
       },
       {
         id: "cocktail-signature",
@@ -251,14 +350,14 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: cocktail,
-        menu: [
+        menus: singleMenu([
           "12 rodzajów finger food (8 zimnych, 4 ciepłe)",
           "Stacja sushi i tatarów",
           "Stacja owoców morza (krewetki, kalmary)",
           "Mini desery autorskie (8 rodzajów)",
           "Bar bezalkoholowy premium",
           "Lampka prosecco powitalna",
-        ],
+        ]),
       },
     ],
   },
@@ -276,13 +375,13 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.05,
         image: foodtruck,
-        menu: [
+        menus: singleMenu([
           "Burger wołowy klasyczny",
           "Burger BBQ z chrupiącą cebulą",
           "Burger wege z buraka i komosy",
           "Frytki belgijskie z dipami",
           "Pełna obsługa truck'a + grafika menu",
-        ],
+        ]),
       },
       {
         id: "ft-wraps",
@@ -292,13 +391,13 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.05,
         image: foodtruck,
-        menu: [
+        menus: singleMenu([
           "Chicken Caesar wrap",
           "Wrap z pulled chicken i BBQ",
           "Wrap z falafelem (wege)",
           "Wrap z łososiem i serkiem śmietankowym",
           "Pełna obsługa truck'a + grafika menu",
-        ],
+        ]),
       },
       {
         id: "ft-rental",
@@ -308,12 +407,12 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_unit",
         vatRate: 0.23,
         image: foodtruck,
-        menu: [
+        menus: singleMenu([
           "Food truck na 8 godzin",
           "Branding i oklejenie wg projektu",
           "Pełne wyposażenie kuchenne",
           "Generator i podstawowe oświetlenie",
-        ],
+        ]),
       },
     ],
   },
@@ -331,13 +430,13 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.08,
         image: bar,
-        menu: [
+        menus: singleMenu([
           "Świeże soki tłoczone (3 rodzaje)",
           "Lemoniady autorskie (4 rodzaje)",
           "Wody premium (gazowana / niegazowana)",
           "Kawa specialty na całym evencie",
           "Selekcja herbat liściastych",
-        ],
+        ]),
       },
       {
         id: "bar-cocktail",
@@ -347,14 +446,14 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.23,
         image: bar,
-        menu: [
+        menus: singleMenu([
           "8 koktajli klasycznych w karcie",
           "2 koktajle autorskie szyte pod event",
           "Wybór win (białe, czerwone, prosecco)",
           "Piwa rzemieślnicze",
           "Pełna obsługa 2 barmanów",
           "Bar mobilny + szkło + dekoracje",
-        ],
+        ]),
       },
     ],
   },
@@ -372,11 +471,11 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_unit",
         vatRate: 0.23,
         image: extras,
-        menu: [
+        menus: singleMenu([
           "Kelner w uniformie",
           "8 godzin pracy",
           "Briefing przed eventem",
-        ],
+        ]),
       },
       {
         id: "ex-tableware",
@@ -386,12 +485,12 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.23,
         image: extras,
-        menu: [
+        menus: singleMenu([
           "Porcelana premium (talerz, miska, podstawek)",
           "Komplet sztućców (6 elementów)",
           "Szkło: woda, wino, prosecco",
           "Serwetka materiałowa",
-        ],
+        ]),
       },
       {
         id: "ex-furniture",
@@ -401,11 +500,11 @@ export const CATALOG: Category[] = [
         pricingUnit: "per_guest",
         vatRate: 0.23,
         image: extras,
-        menu: [
+        menus: singleMenu([
           "Krzesło Chiavari (białe / złote)",
           "Stół bankietowy z obrusem",
           "Skirting i dekoracja stołu",
-        ],
+        ]),
       },
     ],
   },
@@ -423,4 +522,14 @@ export function findVariant(variantId: string): { variant: Variant; category: Ca
     if (v) return { variant: v, category: c };
   }
   return null;
+}
+
+export function findMenu(
+  variantId: string,
+  menuId?: string,
+): MenuOption | null {
+  const found = findVariant(variantId);
+  if (!found) return null;
+  if (!menuId) return found.variant.menus[0] ?? null;
+  return found.variant.menus.find((m) => m.id === menuId) ?? null;
 }
