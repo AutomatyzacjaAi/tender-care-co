@@ -74,8 +74,10 @@ function ConfigureStep() {
     state.contact.defaultGuests || 100,
   );
 
-  // Ensure at least one day exists when entering the configurator
+  // Avoid SSR/CSR mismatch — days/sections come from localStorage
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     ensureDefaultDay();
   }, [ensureDefaultDay]);
 
