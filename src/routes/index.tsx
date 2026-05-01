@@ -265,7 +265,7 @@ function ConfigureStep() {
                   key={variant.id}
                   variant={variant}
                   index={i + 1}
-                  onAdd={() => handleAddVariant(variant)}
+                  onAdd={(menuId) => handleAddVariant(variant, menuId)}
                   canAdd={!!activeSection}
                 />
               ))}
