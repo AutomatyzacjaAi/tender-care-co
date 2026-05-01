@@ -5,7 +5,7 @@ import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
 import { useOffer } from "@/context/OfferContext";
 import { findVariant, VAT_LABEL } from "@/data/catalog";
-import { PLN_DETAILED, formatDateLong } from "@/lib/format";
+import { PLN_DETAILED, formatDateLong, addDaysISO } from "@/lib/format";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
@@ -50,7 +50,7 @@ function SummaryStep() {
       {/* Action bar (no-print) */}
       <div className="no-print border-border-soft bg-surface-elevated/60 border-b">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link to="/configure">
+          <Link to="/">
             <Button variant="ghost" size="sm">
               <Pencil className="mr-2 h-4 w-4" />
               Edytuj ofertę
@@ -158,30 +158,38 @@ function SummaryStep() {
                 <p className="text-sm text-neutral-500">— brak zaplanowanych dni —</p>
               )}
               <div className="space-y-4">
-                {state.days.map((d) => (
-                  <div key={d.date} className="print-break-inside-avoid">
-                    <p className="mb-1.5 text-sm font-medium text-neutral-900">
-                      {capitalize(formatDateLong(d.date))}
-                    </p>
-                    {d.sections.length === 0 ? (
-                      <p className="pl-4 text-sm text-neutral-400">— brak sekcji —</p>
-                    ) : (
-                      <ul className="space-y-1 pl-4 text-sm text-neutral-700">
-                        {d.sections.map((sec) => (
-                          <li key={sec.id} className="flex gap-3">
-                            <span className="w-14 shrink-0 font-mono tabular-nums text-neutral-500">
-                              {sec.time || "—"}
-                            </span>
-                            <span>
-                              {sec.name}{" "}
-                              <span className="text-neutral-500">· {sec.guests} os.</span>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
+                {state.days.map((d) => {
+                  const iso = state.contact.startDate
+                    ? addDaysISO(state.contact.startDate, d.index - 1)
+                    : "";
+                  const dayLabel = iso
+                    ? capitalize(formatDateLong(iso))
+                    : `Dzień ${d.index}`;
+                  return (
+                    <div key={d.index} className="print-break-inside-avoid">
+                      <p className="mb-1.5 text-sm font-medium text-neutral-900">
+                        {dayLabel}
+                      </p>
+                      {d.sections.length === 0 ? (
+                        <p className="pl-4 text-sm text-neutral-400">— brak sekcji —</p>
+                      ) : (
+                        <ul className="space-y-1 pl-4 text-sm text-neutral-700">
+                          {d.sections.map((sec) => (
+                            <li key={sec.id} className="flex gap-3">
+                              <span className="w-14 shrink-0 font-mono tabular-nums text-neutral-500">
+                                {sec.time || "—"}
+                              </span>
+                              <span>
+                                {sec.name}{" "}
+                                <span className="text-neutral-500">· {sec.guests} os.</span>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
@@ -209,12 +217,14 @@ function SummaryStep() {
                         s.items.map((it) => ({ section: s, item: it })),
                       );
                       if (dayItems.length === 0) return null;
+                      const iso = state.contact.startDate
+                        ? addDaysISO(state.contact.startDate, d.index - 1)
+                        : "";
+                      const dateLabel = iso
+                        ? capitalize(formatDateLong(iso))
+                        : `Dzień ${d.index}`;
                       return (
-                        <DayRows
-                          key={d.date}
-                          dateLabel={capitalize(formatDateLong(d.date))}
-                          rows={dayItems}
-                        />
+                        <DayRows key={d.index} dateLabel={dateLabel} rows={dayItems} />
                       );
                     })}
                   </tbody>

@@ -1,211 +1,648 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { CalendarDays, Mail, MapPin, User2, Building2, Phone, Users } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarPlus, Check, Plus, Trash2, Users } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CATALOG, type Variant } from "@/data/catalog";
 import { useOffer } from "@/context/OfferContext";
+import { PLN, formatDateShort } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Krok 1 — Dane wydarzenia · Jurek Catering" },
+      { title: "Krok 1 — Konfiguracja menu · Jurek Catering" },
       {
         name: "description",
-        content: "Powiedz nam o swoim evencie: termin, miejsce, liczba gości.",
+        content: "Skonfiguruj menu cateringowe dla swojego wydarzenia: dodaj dni, sekcje (przerwy, lunch, kolacje) i wybierz warianty menu.",
       },
+      { property: "og:title", content: "Konfigurator oferty cateringowej · Jurek Catering" },
+      { property: "og:description", content: "Stwórz w 3 krokach ofertę cateringową dopasowaną do Twojego wydarzenia." },
     ],
   }),
-  component: ContactStep,
+  component: ConfigureStep,
 });
 
-function Field({
-  icon: Icon,
-  label,
-  htmlFor,
-  children,
-  className = "",
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  htmlFor: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
+const SECTION_PRESETS = [
+  { name: "Powitalna kawa", time: "09:00" },
+  { name: "Przerwa kawowa", time: "11:00" },
+  { name: "Lunch", time: "13:00" },
+  { name: "Przerwa popołudniowa", time: "15:30" },
+  { name: "Kolacja", time: "19:00" },
+  { name: "Cocktail / wieczór", time: "21:00" },
+];
+
+function ConfigureStep() {
+  const navigate = useNavigate();
+  const {
+    state,
+    ensureDefaultDay,
+    addDay,
+    removeDay,
+    addSection,
+    removeSection,
+    updateSectionGuests,
+    setActiveSection,
+    addItem,
+    totals,
+  } = useOffer();
+
+  const [activeCategoryId, setActiveCategoryId] = useState<string>(CATALOG[0].id);
+  const activeCategory = useMemo(
+    () => CATALOG.find((c) => c.id === activeCategoryId) ?? CATALOG[0],
+    [activeCategoryId],
+  );
+  const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
+
+  // New section dialog
+  const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
+  const [newSectionName, setNewSectionName] = useState("");
+  const [newSectionTime, setNewSectionTime] = useState("");
+  const [newSectionGuests, setNewSectionGuests] = useState<number>(
+    state.contact.defaultGuests || 100,
+  );
+
+  // Ensure at least one day exists when entering the configurator
+  useEffect(() => {
+    ensureDefaultDay();
+  }, [ensureDefaultDay]);
+
+  const activeSectionId = state.activeSectionId;
+  const activeSection = useMemo(() => {
+    for (const d of state.days) {
+      const sec = d.sections.find((s) => s.id === activeSectionId);
+      if (sec) return { section: sec, dayIndex: d.index };
+    }
+    return null;
+  }, [state.days, activeSectionId]);
+
+  // Auto-select first section if none active
+  useEffect(() => {
+    if (!activeSectionId) {
+      const first = state.days.flatMap((d) => d.sections)[0];
+      if (first) setActiveSection(first.id);
+    }
+  }, [activeSectionId, state.days, setActiveSection]);
+
+  function openNewSection(dayIndex: number) {
+    setNewSectionFor(dayIndex);
+    setNewSectionName("");
+    setNewSectionTime("");
+    setNewSectionGuests(state.contact.defaultGuests || 100);
+  }
+
+  function commitNewSection() {
+    if (newSectionFor === null) return;
+    const name = newSectionName.trim();
+    if (!name) return;
+    addSection(newSectionFor, name, newSectionGuests, newSectionTime || undefined);
+    toast.success(`Sekcja "${name}" utworzona — wybierz teraz menu.`);
+    setNewSectionFor(null);
+    setNewSectionName("");
+    setNewSectionTime("");
+  }
+
+  function handleAddVariant(variant: Variant) {
+    if (!activeSectionId) {
+      toast.error("Najpierw utwórz lub wybierz sekcję na górze strony.");
+      return;
+    }
+    addItem(activeSectionId, variant.id);
+    toast.success(`Dodano: ${variant.name}`);
+  }
+
+  const totalSectionsCount = state.days.reduce((acc, d) => acc + d.sections.length, 0);
+  const totalItemsCount = state.days.reduce(
+    (acc, d) => acc + d.sections.reduce((a, s) => a + s.items.length, 0),
+    0,
+  );
+
   return (
-    <div className={className}>
-      <Label
-        htmlFor={htmlFor}
-        className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
-      >
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </Label>
-      {children}
+    <div className="bg-surface min-h-screen pb-20">
+      <BrandHeader right={<Stepper />} />
+
+      {/* TOP BAR — Days & Sections */}
+      <SectionsTopBar
+        onAddSection={openNewSection}
+        onAddDay={() => {
+          const idx = addDay();
+          toast.success(`Dodano Dzień ${idx}`);
+        }}
+        onRemoveDay={(idx) => {
+          if (state.days.length <= 1) {
+            toast.error("Musi pozostać co najmniej jeden dzień.");
+            return;
+          }
+          if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
+            removeDay(idx);
+          }
+        }}
+        activeSectionId={activeSectionId}
+        onSelect={(id) => setActiveSection(id)}
+        onRemove={removeSection}
+        onGuestsChange={updateSectionGuests}
+      />
+
+      <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] lg:gap-10 lg:py-8">
+        {/* LEFT — Categories */}
+        <aside className="lg:sticky lg:top-[calc(theme(spacing.20)+theme(spacing.32))] lg:self-start">
+          <p className="mb-3 px-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Kategorie
+          </p>
+          {/* Mobile: horizontal scroll */}
+          <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
+            {CATALOG.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategoryId(cat.id)}
+                className={cn(
+                  "shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors",
+                  cat.id === activeCategoryId
+                    ? "bg-accent text-accent-foreground border-accent"
+                    : "bg-surface-elevated border-border text-foreground",
+                )}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+          {/* Desktop: vertical list */}
+          <ul className="hidden flex-col gap-1 lg:flex">
+            {CATALOG.map((cat) => {
+              const isActive = cat.id === activeCategoryId;
+              return (
+                <li key={cat.id}>
+                  <button
+                    onClick={() => setActiveCategoryId(cat.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                      isActive
+                        ? "bg-accent-soft text-accent"
+                        : "text-foreground hover:bg-surface-sunken",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "font-mono text-[10px] tracking-widest",
+                        isActive ? "text-accent" : "text-muted-foreground",
+                      )}
+                    >
+                      {cat.symbol}
+                    </span>
+                    <span className="text-sm font-medium leading-tight">{cat.name}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </aside>
+
+        {/* MIDDLE — Variants */}
+        <section>
+          {/* Active section context strip */}
+          {activeSection ? (
+            <div className="border-accent/30 bg-accent-soft/60 mb-5 flex flex-col gap-1 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Wybierasz menu dla
+                </p>
+                <p className="text-accent font-serif text-lg font-medium">
+                  {activeSection.section.name}
+                  {activeSection.section.time && (
+                    <span className="text-muted-foreground ml-2 text-sm font-normal">
+                      · {activeSection.section.time}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>{activeSection.section.guests} os.</span>
+                <span className="text-border mx-1">·</span>
+                <span>Dzień {activeSection.dayIndex}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="border-border bg-surface-sunken/60 mb-5 rounded-xl border border-dashed px-4 py-4 text-sm text-muted-foreground">
+              Najpierw utwórz sekcję na górze strony — np. „Lunch, 13:00, 80 os.” — a potem dodawaj do niej pozycje z menu.
+            </div>
+          )}
+
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {activeCategory.symbol} · Kategoria
+            </p>
+            <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
+              {activeCategory.name}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {activeCategory.description}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {activeCategory.variants.map((variant) => (
+              <VariantCard
+                key={variant.id}
+                variant={variant}
+                onPreview={() => setPreviewVariant(variant)}
+              />
+            ))}
+          </div>
+        </section>
+
+      </main>
+
+      {/* Sticky bottom bar — total + continue */}
+      <div className="bg-surface-elevated/95 border-border-soft fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur">
+        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div>
+            <p className="text-xs text-muted-foreground">
+              {totalItemsCount} {totalItemsCount === 1 ? "pozycja" : "pozycji"} ·{" "}
+              {totalSectionsCount} {totalSectionsCount === 1 ? "sekcja" : "sekcji"}
+            </p>
+            <p className="font-serif text-lg font-medium text-foreground">
+              {PLN.format(totals.brutto)} <span className="text-muted-foreground text-xs font-normal">brutto</span>
+            </p>
+          </div>
+          <Button
+            onClick={() => navigate({ to: "/contact" })}
+            disabled={totalItemsCount === 0}
+            className="bg-accent text-accent-foreground hover:bg-accent-muted"
+          >
+            Dalej — dane kontaktowe →
+          </Button>
+        </div>
+      </div>
+
+      {/* Variant menu preview dialog */}
+      <Dialog open={!!previewVariant} onOpenChange={(o) => !o && setPreviewVariant(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-2xl">
+          {previewVariant && (
+            <>
+              <div className="relative aspect-[16/7] w-full overflow-hidden bg-muted">
+                <img
+                  src={previewVariant.image}
+                  alt={previewVariant.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="px-6 pb-2 pt-5">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {activeCategory.name}
+                </p>
+                <DialogHeader className="mt-1 space-y-1 text-left">
+                  <DialogTitle className="font-serif text-2xl font-medium">
+                    {previewVariant.name}
+                  </DialogTitle>
+                </DialogHeader>
+                <p className="mt-2 text-sm text-muted-foreground">{previewVariant.tagline}</p>
+                <div className="border-border-soft mt-4 flex items-baseline justify-between border-t pt-4">
+                  <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    Cena
+                  </span>
+                  <div className="text-right">
+                    <span className="font-serif text-2xl font-medium text-foreground">
+                      {PLN.format(previewVariant.pricePerGuest)}
+                    </span>
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      {previewVariant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4">
+                <p className="mb-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Menu — pełny zestaw
+                </p>
+                <ul className="bg-surface-sunken/60 space-y-2 rounded-lg p-4 text-sm text-foreground">
+                  {previewVariant.menu.map((item, i) => (
+                    <li key={i} className="flex gap-2.5">
+                      <span className="text-accent mt-0.5">·</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Menu jest ustalone — klient nie wybiera pozycji indywidualnie.
+                </p>
+              </div>
+              <DialogFooter className="border-border-soft flex-col gap-2 border-t bg-surface-sunken/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                {activeSection ? (
+                  <p className="text-xs text-muted-foreground">
+                    Trafi do <span className="text-foreground font-medium">{activeSection.section.name}</span>{" "}
+                    · {activeSection.section.guests} os.
+                  </p>
+                ) : (
+                  <p className="text-destructive text-xs">
+                    Brak aktywnej sekcji — utwórz ją na górze.
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="ghost" onClick={() => setPreviewVariant(null)}>
+                    Zamknij
+                  </Button>
+                  <Button
+                    disabled={!activeSection}
+                    onClick={() => {
+                      const v = previewVariant;
+                      setPreviewVariant(null);
+                      handleAddVariant(v);
+                    }}
+                    className="bg-accent text-accent-foreground hover:bg-accent-muted"
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Dodaj do sekcji
+                  </Button>
+                </div>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* New section dialog */}
+      <Dialog open={!!newSectionFor} onOpenChange={(o) => !o && setNewSectionFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Nowa sekcja — Dzień {newSectionFor}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="mb-2 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                Szybki wybór
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {SECTION_PRESETS.map((p) => (
+                  <button
+                    key={p.name}
+                    onClick={() => {
+                      setNewSectionName(p.name);
+                      setNewSectionTime(p.time);
+                    }}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-xs transition-colors",
+                      newSectionName === p.name
+                        ? "bg-accent text-accent-foreground border-accent"
+                        : "border-border bg-surface-sunken text-foreground hover:bg-accent-soft",
+                    )}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="secName" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Nazwa sekcji
+                </Label>
+                <Input
+                  id="secName"
+                  placeholder="np. Lunch"
+                  value={newSectionName}
+                  onChange={(e) => setNewSectionName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <Label htmlFor="secTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Godzina
+                </Label>
+                <Input
+                  id="secTime"
+                  type="time"
+                  value={newSectionTime}
+                  onChange={(e) => setNewSectionTime(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="secGuests" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                Liczba osób
+              </Label>
+              <Input
+                id="secGuests"
+                type="number"
+                min={1}
+                value={newSectionGuests}
+                onChange={(e) => setNewSectionGuests(Math.max(1, Number(e.target.value) || 1))}
+              />
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                Tyle porcji policzymy z każdej pozycji menu dodanej do tej sekcji.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setNewSectionFor(null)}
+            >
+              Anuluj
+            </Button>
+            <Button
+              disabled={!newSectionName.trim() || newSectionGuests < 1}
+              onClick={commitNewSection}
+              className="bg-accent text-accent-foreground hover:bg-accent-muted"
+            >
+              Utwórz sekcję
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function ContactStep() {
-  const { state, setContact, syncDaysFromContact } = useOffer();
-  const [c, setC] = useState(state.contact);
-  const navigate = useNavigate();
-
-  const valid =
-    c.fullName.trim() &&
-    c.email.trim() &&
-    c.eventName.trim() &&
-    c.startDate &&
-    c.endDate &&
-    c.endDate >= c.startDate &&
-    c.defaultGuests > 0;
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!valid) return;
-    setContact(c);
-    // sync after state update — defer one tick
-    setTimeout(() => {
-      syncDaysFromContact();
-      navigate({ to: "/configure" });
-    }, 0);
-  }
+function SectionsTopBar({
+  onAddSection,
+  onAddDay,
+  onRemoveDay,
+  activeSectionId,
+  onSelect,
+  onRemove,
+  onGuestsChange,
+}: {
+  onAddSection: (dayIndex: number) => void;
+  onAddDay: () => void;
+  onRemoveDay: (dayIndex: number) => void;
+  activeSectionId: string | null;
+  onSelect: (id: string) => void;
+  onRemove: (id: string) => void;
+  onGuestsChange: (id: string, guests: number) => void;
+}) {
+  const { state } = useOffer();
 
   return (
-    <div className="bg-surface min-h-screen">
-      <BrandHeader right={<Stepper />} />
-
-      <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-8 sm:py-20">
-        <div className="mb-12 text-center">
-          <p className="mb-3 text-xs uppercase tracking-[0.22em] text-accent">Krok 1 z 3</p>
-          <h1 className="font-serif text-4xl font-medium leading-tight text-foreground sm:text-5xl">
-            Opowiedz nam o swoim wydarzeniu
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Kilka podstawowych informacji o evencie. W następnym kroku skonfigurujesz menu na każdy
-            dzień.
+    <div className="bg-surface-elevated/80 border-border-soft sticky top-16 z-30 border-b backdrop-blur">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-4 sm:px-6">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Plan wydarzenia
           </p>
+          <button
+            onClick={onAddDay}
+            className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-xs font-medium transition-colors"
+          >
+            <CalendarPlus className="h-3 w-3" />
+            dodaj dzień
+          </button>
         </div>
-
-        <form
-          onSubmit={submit}
-          className="bg-surface-elevated border-border-soft rounded-2xl border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.08)] sm:p-10"
-        >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <Field icon={User2} label="Imię i nazwisko" htmlFor="fullName">
-              <Input
-                id="fullName"
-                value={c.fullName}
-                onChange={(e) => setC({ ...c, fullName: e.target.value })}
-                placeholder="Anna Kowalska"
-                required
-              />
-            </Field>
-            <Field icon={Building2} label="Firma" htmlFor="company">
-              <Input
-                id="company"
-                value={c.company}
-                onChange={(e) => setC({ ...c, company: e.target.value })}
-                placeholder="Acme Sp. z o.o."
-              />
-            </Field>
-            <Field icon={Mail} label="E-mail" htmlFor="email">
-              <Input
-                id="email"
-                type="email"
-                value={c.email}
-                onChange={(e) => setC({ ...c, email: e.target.value })}
-                placeholder="anna@firma.pl"
-                required
-              />
-            </Field>
-            <Field icon={Phone} label="Telefon" htmlFor="phone">
-              <Input
-                id="phone"
-                value={c.phone}
-                onChange={(e) => setC({ ...c, phone: e.target.value })}
-                placeholder="+48 600 000 000"
-              />
-            </Field>
-
-            <div className="border-border-soft sm:col-span-2 my-2 border-t" />
-
-            <Field icon={CalendarDays} label="Nazwa wydarzenia" htmlFor="eventName" className="sm:col-span-2">
-              <Input
-                id="eventName"
-                value={c.eventName}
-                onChange={(e) => setC({ ...c, eventName: e.target.value })}
-                placeholder="np. Konferencja Roczna 2026"
-                required
-              />
-            </Field>
-            <Field icon={MapPin} label="Lokalizacja" htmlFor="location" className="sm:col-span-2">
-              <Input
-                id="location"
-                value={c.location}
-                onChange={(e) => setC({ ...c, location: e.target.value })}
-                placeholder="np. Hotel Bristol, Warszawa"
-              />
-            </Field>
-
-            <Field icon={CalendarDays} label="Data od" htmlFor="startDate">
-              <Input
-                id="startDate"
-                type="date"
-                value={c.startDate}
-                onChange={(e) => setC({ ...c, startDate: e.target.value })}
-                required
-              />
-            </Field>
-            <Field icon={CalendarDays} label="Data do" htmlFor="endDate">
-              <Input
-                id="endDate"
-                type="date"
-                value={c.endDate}
-                min={c.startDate || undefined}
-                onChange={(e) => setC({ ...c, endDate: e.target.value })}
-                required
-              />
-            </Field>
-            <Field icon={Users} label="Szacunkowa liczba gości" htmlFor="guests" className="sm:col-span-2">
-              <Input
-                id="guests"
-                type="number"
-                min={1}
-                value={c.defaultGuests}
-                onChange={(e) => setC({ ...c, defaultGuests: Number(e.target.value) || 0 })}
-                required
-              />
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Wartość domyślna dla nowych pozycji menu — zawsze możesz ją zmienić indywidualnie.
-              </p>
-            </Field>
-          </div>
-
-          <div className="mt-10 flex flex-col-reverse items-center justify-between gap-3 sm:flex-row">
-            <Link
-              to="/"
-              className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-            >
-              ← Powrót na stronę
-            </Link>
-            <Button
-              type="submit"
-              size="lg"
-              disabled={!valid}
-              className="w-full bg-accent text-accent-foreground hover:bg-accent-muted sm:w-auto"
-            >
-              Dalej — konfiguracja menu →
-            </Button>
-          </div>
-        </form>
-
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Twoje dane są zapisywane lokalnie w przeglądarce — możesz wrócić do edycji w każdej chwili.
-        </p>
-      </main>
+        <div className="-mx-4 flex flex-col gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
+          {state.days.map((d) => (
+            <div key={d.index} className="flex flex-wrap items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2 pr-2">
+                <span className="text-foreground bg-surface-sunken inline-flex h-7 min-w-[68px] items-center justify-center gap-1 rounded-full border border-border px-2.5 text-xs font-medium">
+                  Dzień {d.index}
+                </span>
+                {state.days.length > 1 && (
+                  <button
+                    onClick={() => onRemoveDay(d.index)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label={`Usuń Dzień ${d.index}`}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              {d.sections.length === 0 && (
+                <span className="text-muted-foreground text-xs italic">brak sekcji</span>
+              )}
+              {d.sections.map((sec) => {
+                const isActive = sec.id === activeSectionId;
+                return (
+                  <div
+                    key={sec.id}
+                    className={cn(
+                      "group flex shrink-0 items-stretch overflow-hidden rounded-full border transition-colors",
+                      isActive
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-border bg-surface text-foreground hover:border-accent/50",
+                    )}
+                  >
+                    <button
+                      onClick={() => onSelect(sec.id)}
+                      className="flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-xs font-medium"
+                    >
+                      {isActive && <Check className="h-3 w-3" />}
+                      <span>{sec.name}</span>
+                      {sec.time && (
+                        <span
+                          className={cn(
+                            "text-[10px]",
+                            isActive ? "text-accent-foreground/80" : "text-muted-foreground",
+                          )}
+                        >
+                          {sec.time}
+                        </span>
+                      )}
+                    </button>
+                    <div
+                      className={cn(
+                        "flex items-center gap-0.5 border-l px-1.5",
+                        isActive ? "border-accent-foreground/20" : "border-border",
+                      )}
+                    >
+                      <Users
+                        className={cn(
+                          "h-3 w-3",
+                          isActive ? "text-accent-foreground/80" : "text-muted-foreground",
+                        )}
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        value={sec.guests}
+                        onChange={(e) => onGuestsChange(sec.id, Number(e.target.value) || 1)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "w-10 bg-transparent text-center text-xs tabular-nums focus:outline-none",
+                          isActive ? "text-accent-foreground" : "text-foreground",
+                        )}
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Usunąć sekcję "${sec.name}"?`)) onRemove(sec.id);
+                      }}
+                      className={cn(
+                        "border-l px-2 transition-colors",
+                        isActive
+                          ? "border-accent-foreground/20 text-accent-foreground/70 hover:text-accent-foreground"
+                          : "border-border text-muted-foreground hover:text-destructive",
+                      )}
+                      aria-label="Usuń sekcję"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                onClick={() => onAddSection(d.index)}
+                className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex shrink-0 items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                dodaj sekcję
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
+  );
+}
+
+function VariantCard({ variant, onPreview }: { variant: Variant; onPreview: () => void }) {
+  const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
+  return (
+    <article
+      onClick={onPreview}
+      className="bg-surface-elevated border-border-soft group flex cursor-pointer flex-col overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)]"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <img
+          src={variant.image}
+          alt={variant.name}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+        <div className="absolute right-3 top-3 rounded-full bg-surface-elevated/95 px-3 py-1 text-[10px] uppercase tracking-widest text-foreground backdrop-blur">
+          {variant.menu.length} pozycji w menu
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h3 className="font-serif text-xl font-medium text-foreground">{variant.name}</h3>
+          <div className="text-right">
+            <p className="font-serif text-lg font-medium text-foreground">
+              {PLN.format(variant.pricePerGuest)}
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {unitLabel}
+            </p>
+          </div>
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">{variant.tagline}</p>
+
+        <div className="border-border-soft text-accent group-hover:bg-accent group-hover:text-accent-foreground mt-auto flex items-center justify-between rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors">
+          <span>Zobacz menu i dodaj</span>
+          <Plus className="h-4 w-4" />
+        </div>
+      </div>
+    </article>
   );
 }

@@ -24,24 +24,21 @@ const DATE_SHORT = new Intl.DateTimeFormat("pl-PL", {
 });
 
 export function formatDateLong(iso: string): string {
+  if (!iso) return "";
   return DATE_LONG.format(new Date(iso));
 }
 
 export function formatDateShort(iso: string): string {
+  if (!iso) return "";
   return DATE_SHORT.format(new Date(iso));
 }
 
-export function eachDayBetween(startISO: string, endISO: string): string[] {
-  if (!startISO || !endISO) return [];
-  const start = new Date(startISO);
-  const end = new Date(endISO);
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return [];
-  const out: string[] = [];
-  const cur = new Date(start);
-  cur.setHours(12, 0, 0, 0);
-  while (cur <= end) {
-    out.push(cur.toISOString().slice(0, 10));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return out;
+/** Add `n` days (0-based: 0 = same day) to an ISO date string. */
+export function addDaysISO(startISO: string, n: number): string {
+  if (!startISO) return "";
+  const d = new Date(startISO);
+  if (isNaN(d.getTime())) return "";
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
 }
