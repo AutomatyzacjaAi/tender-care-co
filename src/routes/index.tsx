@@ -136,26 +136,29 @@ function ConfigureStep() {
       <BrandHeader right={<Stepper />} />
 
       {/* TOP BAR — Days & Sections */}
-      <SectionsTopBar
-        onAddSection={openNewSection}
-        onAddDay={() => {
-          const idx = addDay();
-          toast.success(`Dodano Dzień ${idx}`);
-        }}
-        onRemoveDay={(idx) => {
-          if (state.days.length <= 1) {
-            toast.error("Musi pozostać co najmniej jeden dzień.");
-            return;
-          }
-          if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
-            removeDay(idx);
-          }
-        }}
-        activeSectionId={activeSectionId}
-        onSelect={(id) => setActiveSection(id)}
-        onRemove={removeSection}
-        onGuestsChange={updateSectionGuests}
-      />
+      {mounted && (
+        <SectionsTopBar
+          onAddSection={openNewSection}
+          onAddDay={() => {
+            const idx = addDay();
+            toast.success(`Dodano Dzień ${idx}`);
+          }}
+          onRemoveDay={(idx) => {
+            if (state.days.length <= 1) {
+              toast.error("Musi pozostać co najmniej jeden dzień.");
+              return;
+            }
+            if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
+              removeDay(idx);
+            }
+          }}
+          onDateChange={setDayDate}
+          activeSectionId={activeSectionId}
+          onSelect={(id) => setActiveSection(id)}
+          onRemove={removeSection}
+          onGuestsChange={updateSectionGuests}
+        />
+      )}
 
       <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] lg:gap-10 lg:py-8">
         {/* LEFT — Categories */}
