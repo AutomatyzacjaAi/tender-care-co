@@ -3,8 +3,8 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const steps = [
-  { id: 1, label: "Dane wydarzenia", path: "/" },
-  { id: 2, label: "Konfiguracja menu", path: "/configure" },
+  { id: 1, label: "Konfiguracja menu", path: "/" },
+  { id: 2, label: "Dane kontaktowe", path: "/contact" },
   { id: 3, label: "Podsumowanie", path: "/summary" },
 ] as const;
 
