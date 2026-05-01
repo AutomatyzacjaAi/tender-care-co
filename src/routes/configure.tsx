@@ -516,11 +516,13 @@ function ConfigureStep() {
   }
 }
 
-function VariantCard({ variant, onAdd }: { variant: Variant; onAdd: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+function VariantCard({ variant, onPreview }: { variant: Variant; onPreview: () => void }) {
   const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
   return (
-    <article className="bg-surface-elevated border-border-soft group flex flex-col overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)]">
+    <article
+      onClick={onPreview}
+      className="bg-surface-elevated border-border-soft group flex cursor-pointer flex-col overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)]"
+    >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <img
           src={variant.image}
@@ -528,6 +530,9 @@ function VariantCard({ variant, onAdd }: { variant: Variant; onAdd: () => void }
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
+        <div className="absolute right-3 top-3 rounded-full bg-surface-elevated/95 px-3 py-1 text-[10px] uppercase tracking-widest text-foreground backdrop-blur">
+          {variant.menu.length} pozycji w menu
+        </div>
       </div>
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-2 flex items-baseline justify-between gap-3">
@@ -543,32 +548,10 @@ function VariantCard({ variant, onAdd }: { variant: Variant; onAdd: () => void }
         </div>
         <p className="mb-4 text-sm text-muted-foreground">{variant.tagline}</p>
 
-        <button
-          onClick={() => setExpanded((s) => !s)}
-          className="border-border-soft text-muted-foreground hover:text-foreground mb-3 flex items-center justify-between rounded-lg border px-3 py-2 text-xs"
-        >
-          <span>{expanded ? "Ukryj menu" : "Zobacz pełne menu"}</span>
-          {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-        </button>
-        {expanded && (
-          <ul className="bg-surface-sunken/60 mb-4 space-y-1.5 rounded-lg p-3 text-xs text-foreground">
-            {variant.menu.map((item, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-accent">·</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <Button
-          onClick={onAdd}
-          variant="outline"
-          className="hover:bg-accent hover:text-accent-foreground border-accent/30 text-accent mt-auto"
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          Dodaj do sekcji
-        </Button>
+        <div className="border-border-soft text-accent group-hover:bg-accent group-hover:text-accent-foreground mt-auto flex items-center justify-between rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors">
+          <span>Zobacz menu i dodaj</span>
+          <ChevronDown className="h-4 w-4 -rotate-90" />
+        </div>
       </div>
     </article>
   );
