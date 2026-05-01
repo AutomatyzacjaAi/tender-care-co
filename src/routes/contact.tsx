@@ -178,19 +178,6 @@ function ContactStep() {
                 required
               />
             </Field>
-            <Field icon={Users} label="Szacunkowa liczba gości" htmlFor="guests" className="sm:col-span-2">
-              <Input
-                id="guests"
-                type="number"
-                min={1}
-                value={c.defaultGuests}
-                onChange={(e) => setC({ ...c, defaultGuests: Number(e.target.value) || 0 })}
-                required
-              />
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Wartość domyślna dla nowych pozycji menu — zawsze możesz ją zmienić indywidualnie.
-              </p>
-            </Field>
           </div>
 
           <div className="mt-10 flex flex-col-reverse items-center justify-between gap-3 sm:flex-row">
@@ -198,7 +185,7 @@ function ContactStep() {
               to="/"
               className="text-sm text-muted-foreground underline-offset-4 hover:underline"
             >
-              ← Powrót na stronę
+              ← Wróć do konfiguracji menu
             </Link>
             <Button
               type="submit"
@@ -206,7 +193,7 @@ function ContactStep() {
               disabled={!valid}
               className="w-full bg-accent text-accent-foreground hover:bg-accent-muted sm:w-auto"
             >
-              Dalej — konfiguracja menu →
+              Dalej — podsumowanie →
             </Button>
           </div>
         </form>
