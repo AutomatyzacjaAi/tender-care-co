@@ -702,3 +702,76 @@ function VariantCard({
     </article>
   );
 }
+
+function VariantAccordionRow({
+  variant,
+  index,
+  onAdd,
+  canAdd,
+}: {
+  variant: Variant;
+  index: number;
+  onAdd: () => void;
+  canAdd: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
+  return (
+    <div className="bg-surface-elevated">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex flex-1 items-center gap-3 text-left"
+          aria-expanded={open}
+        >
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+              open && "rotate-180",
+            )}
+          />
+          <span className="text-muted-foreground hidden font-mono text-[10px] tracking-widest sm:inline">
+            0{index}
+          </span>
+          <span className="font-serif text-base font-medium text-foreground sm:text-lg">
+            Wariant {index} · {variant.name}
+          </span>
+          <span className="text-muted-foreground hidden text-xs italic sm:inline">
+            {variant.tagline}
+          </span>
+        </button>
+        <div className="text-right shrink-0">
+          <p className="font-serif text-base font-medium text-foreground sm:text-lg">
+            {PLN.format(variant.pricePerGuest)}
+          </p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            {unitLabel}
+          </p>
+        </div>
+        <button
+          onClick={onAdd}
+          disabled={!canAdd}
+          className="bg-accent text-accent-foreground hover:bg-accent-muted flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Dodaj
+        </button>
+      </div>
+      {open && (
+        <div className="bg-surface-sunken/40 border-border-soft border-t px-4 py-4 sm:px-5">
+          <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Menu — pełny zestaw ({variant.menu.length})
+          </p>
+          <ul className="grid gap-1.5 text-sm leading-snug text-foreground sm:grid-cols-2">
+            {variant.menu.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-accent mt-0.5">·</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
