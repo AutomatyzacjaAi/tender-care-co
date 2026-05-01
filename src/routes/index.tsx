@@ -514,7 +514,7 @@ function SectionsTopBar({
   return (
     <div className="bg-surface-elevated/80 border-border-soft sticky top-16 z-30 border-b backdrop-blur">
       <div className="mx-auto w-full max-w-[1400px] px-4 py-4 sm:px-6">
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Plan wydarzenia
           </p>
@@ -526,6 +526,11 @@ function SectionsTopBar({
             dodaj dzień
           </button>
         </div>
+        <p className="text-muted-foreground mb-3 max-w-3xl text-xs leading-relaxed sm:text-[13px]">
+          Wybierz lub dodaj sekcję (np. <span className="text-foreground font-medium">Przerwa kawowa, 11:00</span>),
+          a następnie z poniższych kategorii i menu wybierz pozycje, które mają się w niej znaleźć.
+          Po kliknięciu w kolejną sekcję dodajesz znów pozycje — na końcu, w podsumowaniu, zobaczysz wszystkie swoje wybory.
+        </p>
         <div className="-mx-4 flex flex-col gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
           {state.days.map((d) => (
             <div key={d.index} className="flex flex-wrap items-center gap-2">
