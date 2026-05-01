@@ -302,6 +302,7 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     ensureDefaultDay,
     addDay,
     removeDay,
+    setDayDate,
     addSection,
     renameSection,
     updateSectionGuests,
