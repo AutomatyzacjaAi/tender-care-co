@@ -29,6 +29,7 @@ export type Section = {
 
 export type EventDay = {
   index: number; // 1-based ordinal: Dzień 1, Dzień 2…
+  date?: string; // YYYY-MM-DD, opcjonalna konkretna data dnia
   sections: Section[];
 };
 
@@ -62,6 +63,7 @@ type Ctx = {
   ensureDefaultDay: () => void;
   addDay: () => number;
   removeDay: (index: number) => void;
+  setDayDate: (index: number, date: string) => void;
   addSection: (dayIndex: number, name: string, guests: number, time?: string) => string;
   renameSection: (sectionId: string, name: string, time?: string) => void;
   updateSectionGuests: (sectionId: string, guests: number) => void;
