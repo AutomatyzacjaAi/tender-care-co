@@ -16,6 +16,7 @@ export type ContactInfo = {
 export type SectionItem = {
   id: string;
   variantId: string;
+  menuId?: string;
   guests: number;
 };
 
