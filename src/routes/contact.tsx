@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { CalendarDays, Mail, MapPin, User2, Building2, Phone, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CalendarDays, Mail, MapPin, User2, Building2, Phone } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,13 @@ import { useOffer } from "@/context/OfferContext";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Krok 1 — Dane wydarzenia · Jurek Catering" },
+      { title: "Krok 2 — Dane kontaktowe · Jurek Catering" },
       {
         name: "description",
-        content: "Powiedz nam o swoim evencie: termin, miejsce, liczba gości.",
+        content: "Podaj dane kontaktowe i termin wydarzenia, abyśmy mogli przygotować ofertę.",
       },
+      { property: "og:title", content: "Dane kontaktowe — krok 2 · Jurek Catering" },
+      { property: "og:description", content: "Krok 2 z 3 konfiguratora oferty cateringowej." },
     ],
   }),
   component: ContactStep,
@@ -49,9 +51,21 @@ function Field({
 }
 
 function ContactStep() {
-  const { state, setContact, syncDaysFromContact } = useOffer();
+  const { state, setContact } = useOffer();
   const [c, setC] = useState(state.contact);
   const navigate = useNavigate();
+
+  const totalItems = state.days.reduce(
+    (acc, d) => acc + d.sections.reduce((a, s) => a + s.items.length, 0),
+    0,
+  );
+
+  // If user has nothing in offer yet, send them back to step 1
+  useEffect(() => {
+    if (totalItems === 0) {
+      navigate({ to: "/" });
+    }
+  }, [totalItems, navigate]);
 
   const valid =
     c.fullName.trim() &&
@@ -59,33 +73,28 @@ function ContactStep() {
     c.eventName.trim() &&
     c.startDate &&
     c.endDate &&
-    c.endDate >= c.startDate &&
-    c.defaultGuests > 0;
+    c.endDate >= c.startDate;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
-    setContact(c);
-    // sync after state update — defer one tick
-    setTimeout(() => {
-      syncDaysFromContact();
-      navigate({ to: "/configure" });
-    }, 0);
+    setContact({ ...c, defaultGuests: c.defaultGuests || 100 });
+    navigate({ to: "/summary" });
   }
 
   return (
     <div className="bg-surface min-h-screen">
       <BrandHeader right={<Stepper />} />
 
-      <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-8 sm:py-20">
-        <div className="mb-12 text-center">
-          <p className="mb-3 text-xs uppercase tracking-[0.22em] text-accent">Krok 1 z 3</p>
+      <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-8 sm:py-16">
+        <div className="mb-10 text-center">
+          <p className="mb-3 text-xs uppercase tracking-[0.22em] text-accent">Krok 2 z 3</p>
           <h1 className="font-serif text-4xl font-medium leading-tight text-foreground sm:text-5xl">
-            Opowiedz nam o swoim wydarzeniu
+            Dane kontaktowe i termin
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Kilka podstawowych informacji o evencie. W następnym kroku skonfigurujesz menu na każdy
-            dzień.
+            Twoja oferta jest gotowa — podaj jeszcze dane kontaktowe oraz dokładny termin
+            wydarzenia, żebyśmy mogli odezwać się z propozycją.
           </p>
         </div>
 
