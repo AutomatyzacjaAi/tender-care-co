@@ -50,6 +50,7 @@ function ConfigureStep() {
     ensureDefaultDay,
     addDay,
     removeDay,
+    setDayDate,
     addSection,
     removeSection,
     updateSectionGuests,
