@@ -24,6 +24,7 @@ export type Section = {
   id: string;
   name: string;
   time: string; // optional HH:MM
+  guests: number; // szacowana liczba os w sekcji — domyślna dla wszystkich pozycji
   items: SectionItem[];
 };
 
@@ -60,8 +61,9 @@ type Ctx = {
   state: OfferState;
   setContact: (c: ContactInfo) => void;
   syncDaysFromContact: () => void;
-  addSection: (date: string, name: string, time?: string) => string;
+  addSection: (date: string, name: string, guests: number, time?: string) => string;
   renameSection: (sectionId: string, name: string, time?: string) => void;
+  updateSectionGuests: (sectionId: string, guests: number) => void;
   removeSection: (sectionId: string) => void;
   setActiveSection: (sectionId: string | null) => void;
   addItem: (sectionId: string, variantId: string, guests?: number) => void;
@@ -115,17 +117,36 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const addSection = useCallback((date: string, name: string, time?: string) => {
+  const addSection = useCallback((date: string, name: string, guests: number, time?: string) => {
     const id = uid();
     setState((s) => {
       const days = s.days.map((d) =>
         d.date === date
-          ? { ...d, sections: [...d.sections, { id, name, time: time ?? "", items: [] }] }
+          ? { ...d, sections: [...d.sections, { id, name, time: time ?? "", guests, items: [] }] }
           : d,
       );
       return { ...s, days, activeSectionId: id };
     });
     return id;
+  }, []);
+
+  const updateSectionGuests = useCallback((sectionId: string, guests: number) => {
+    setState((s) => ({
+      ...s,
+      days: s.days.map((d) => ({
+        ...d,
+        sections: d.sections.map((sec) =>
+          sec.id === sectionId
+            ? {
+                ...sec,
+                guests: Math.max(1, guests),
+                // propaguj do wszystkich pozycji w sekcji
+                items: sec.items.map((it) => ({ ...it, guests: Math.max(1, guests) })),
+              }
+            : sec,
+        ),
+      })),
+    }));
   }, []);
 
   const renameSection = useCallback((sectionId: string, name: string, time?: string) => {
@@ -158,7 +179,15 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
   const addItem = useCallback((sectionId: string, variantId: string, guests?: number) => {
     setState((s) => {
       const itemId = uid();
-      const g = guests ?? s.contact.defaultGuests ?? 100;
+      let sectionGuests = s.contact.defaultGuests ?? 100;
+      for (const d of s.days) {
+        const sec = d.sections.find((x) => x.id === sectionId);
+        if (sec) {
+          sectionGuests = sec.guests;
+          break;
+        }
+      }
+      const g = guests ?? sectionGuests;
       return {
         ...s,
         days: s.days.map((d) => ({
@@ -243,6 +272,7 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     syncDaysFromContact,
     addSection,
     renameSection,
+    updateSectionGuests,
     removeSection,
     setActiveSection,
     addItem,
