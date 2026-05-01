@@ -350,7 +350,7 @@ function ConfigureStep() {
                   Menu — pełny zestaw
                 </p>
                 <ul className="bg-surface-sunken/60 space-y-2 rounded-lg p-4 text-sm text-foreground">
-                  {previewVariant.menu.map((item, i) => (
+                  {(previewVariant.menus[0]?.items ?? []).map((item, i) => (
                     <li key={i} className="flex gap-2.5">
                       <span className="text-accent mt-0.5">·</span>
                       <span>{item}</span>
@@ -673,10 +673,10 @@ function VariantCard({
       <div className="flex flex-1 flex-col px-4 py-3">
         <p className="mb-2 text-xs text-muted-foreground italic">{variant.tagline}</p>
         <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          W menu ({variant.menu.length})
+          W menu ({variant.menus[0]?.items.length ?? 0})
         </p>
         <ul className="mb-3 space-y-1 text-[13px] leading-snug text-foreground">
-          {variant.menu.map((item, i) => (
+          {(variant.menus[0]?.items ?? []).map((item, i) => (
             <li key={i} className="flex gap-1.5">
               <span className="text-accent mt-0.5">·</span>
               <span>{item}</span>
