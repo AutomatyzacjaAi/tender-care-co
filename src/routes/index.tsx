@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Check, Plus, Trash2, Users } from "lucide-react";
+import { CalendarPlus, Check, ChevronDown, Plus, Trash2, Users } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,7 @@ function ConfigureStep() {
     ensureDefaultDay,
     addDay,
     removeDay,
+    setDayDate,
     addSection,
     removeSection,
     updateSectionGuests,
@@ -73,8 +74,10 @@ function ConfigureStep() {
     state.contact.defaultGuests || 100,
   );
 
-  // Ensure at least one day exists when entering the configurator
+  // Avoid SSR/CSR mismatch — days/sections come from localStorage
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     ensureDefaultDay();
   }, [ensureDefaultDay]);
 
@@ -133,26 +136,29 @@ function ConfigureStep() {
       <BrandHeader right={<Stepper />} />
 
       {/* TOP BAR — Days & Sections */}
-      <SectionsTopBar
-        onAddSection={openNewSection}
-        onAddDay={() => {
-          const idx = addDay();
-          toast.success(`Dodano Dzień ${idx}`);
-        }}
-        onRemoveDay={(idx) => {
-          if (state.days.length <= 1) {
-            toast.error("Musi pozostać co najmniej jeden dzień.");
-            return;
-          }
-          if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
-            removeDay(idx);
-          }
-        }}
-        activeSectionId={activeSectionId}
-        onSelect={(id) => setActiveSection(id)}
-        onRemove={removeSection}
-        onGuestsChange={updateSectionGuests}
-      />
+      {mounted && (
+        <SectionsTopBar
+          onAddSection={openNewSection}
+          onAddDay={() => {
+            const idx = addDay();
+            toast.success(`Dodano Dzień ${idx}`);
+          }}
+          onRemoveDay={(idx) => {
+            if (state.days.length <= 1) {
+              toast.error("Musi pozostać co najmniej jeden dzień.");
+              return;
+            }
+            if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
+              removeDay(idx);
+            }
+          }}
+          onDateChange={setDayDate}
+          activeSectionId={activeSectionId}
+          onSelect={(id) => setActiveSection(id)}
+          onRemove={removeSection}
+          onGuestsChange={updateSectionGuests}
+        />
+      )}
 
       <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] lg:gap-10 lg:py-8">
         {/* LEFT — Categories */}
@@ -251,17 +257,31 @@ function ConfigureStep() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {activeCategory.variants.map((variant) => (
-              <VariantCard
-                key={variant.id}
-                variant={variant}
-                onPreview={() => setPreviewVariant(variant)}
-                onAdd={() => handleAddVariant(variant)}
-                canAdd={!!activeSection}
-              />
-            ))}
-          </div>
+          {activeCategory.id === "coffee-break" ? (
+            <div className="bg-surface-elevated border-border-soft divide-border-soft divide-y overflow-hidden rounded-2xl border">
+              {activeCategory.variants.map((variant, i) => (
+                <VariantAccordionRow
+                  key={variant.id}
+                  variant={variant}
+                  index={i + 1}
+                  onAdd={() => handleAddVariant(variant)}
+                  canAdd={!!activeSection}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {activeCategory.variants.map((variant) => (
+                <VariantCard
+                  key={variant.id}
+                  variant={variant}
+                  onPreview={() => setPreviewVariant(variant)}
+                  onAdd={() => handleAddVariant(variant)}
+                  canAdd={!!activeSection}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
       </main>
@@ -473,6 +493,7 @@ function SectionsTopBar({
   onAddSection,
   onAddDay,
   onRemoveDay,
+  onDateChange,
   activeSectionId,
   onSelect,
   onRemove,
@@ -481,6 +502,7 @@ function SectionsTopBar({
   onAddSection: (dayIndex: number) => void;
   onAddDay: () => void;
   onRemoveDay: (dayIndex: number) => void;
+  onDateChange: (dayIndex: number, date: string) => void;
   activeSectionId: string | null;
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
@@ -507,9 +529,21 @@ function SectionsTopBar({
           {state.days.map((d) => (
             <div key={d.index} className="flex flex-wrap items-center gap-2">
               <div className="flex shrink-0 items-center gap-2 pr-2">
-                <span className="text-foreground bg-surface-sunken inline-flex h-7 min-w-[68px] items-center justify-center gap-1 rounded-full border border-border px-2.5 text-xs font-medium">
+                <span className="text-muted-foreground inline-flex h-7 items-center font-mono text-[10px] uppercase tracking-widest">
                   Dzień {d.index}
                 </span>
+                <input
+                  type="date"
+                  value={d.date ?? ""}
+                  onChange={(e) => onDateChange(d.index, e.target.value)}
+                  className={cn(
+                    "h-7 rounded-full border px-2.5 text-xs font-medium tabular-nums transition-colors",
+                    d.date
+                      ? "border-accent/40 bg-accent-soft text-accent"
+                      : "border-dashed border-border bg-surface-sunken text-muted-foreground hover:border-accent/40",
+                  )}
+                  aria-label={`Data dla Dnia ${d.index}`}
+                />
                 {state.days.length > 1 && (
                   <button
                     onClick={() => onRemoveDay(d.index)}
@@ -666,5 +700,78 @@ function VariantCard({
         </div>
       </div>
     </article>
+  );
+}
+
+function VariantAccordionRow({
+  variant,
+  index,
+  onAdd,
+  canAdd,
+}: {
+  variant: Variant;
+  index: number;
+  onAdd: () => void;
+  canAdd: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
+  return (
+    <div className="bg-surface-elevated">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex flex-1 items-center gap-3 text-left"
+          aria-expanded={open}
+        >
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+              open && "rotate-180",
+            )}
+          />
+          <span className="text-muted-foreground hidden font-mono text-[10px] tracking-widest sm:inline">
+            0{index}
+          </span>
+          <span className="font-serif text-base font-medium text-foreground sm:text-lg">
+            Wariant {index} · {variant.name}
+          </span>
+          <span className="text-muted-foreground hidden text-xs italic sm:inline">
+            {variant.tagline}
+          </span>
+        </button>
+        <div className="text-right shrink-0">
+          <p className="font-serif text-base font-medium text-foreground sm:text-lg">
+            {PLN.format(variant.pricePerGuest)}
+          </p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            {unitLabel}
+          </p>
+        </div>
+        <button
+          onClick={onAdd}
+          disabled={!canAdd}
+          className="bg-accent text-accent-foreground hover:bg-accent-muted flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Dodaj
+        </button>
+      </div>
+      {open && (
+        <div className="bg-surface-sunken/40 border-border-soft border-t px-4 py-4 sm:px-5">
+          <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Menu — pełny zestaw ({variant.menu.length})
+          </p>
+          <ul className="grid gap-1.5 text-sm leading-snug text-foreground sm:grid-cols-2">
+            {variant.menu.map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-accent mt-0.5">·</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }

@@ -29,6 +29,7 @@ export type Section = {
 
 export type EventDay = {
   index: number; // 1-based ordinal: Dzień 1, Dzień 2…
+  date?: string; // YYYY-MM-DD, opcjonalna konkretna data dnia
   sections: Section[];
 };
 
@@ -62,6 +63,7 @@ type Ctx = {
   ensureDefaultDay: () => void;
   addDay: () => number;
   removeDay: (index: number) => void;
+  setDayDate: (index: number, date: string) => void;
   addSection: (dayIndex: number, name: string, guests: number, time?: string) => string;
   renameSection: (sectionId: string, name: string, time?: string) => void;
   updateSectionGuests: (sectionId: string, guests: number) => void;
@@ -123,6 +125,13 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
       return { ...s, days: [...s.days, { index: newIndex, sections: [] }] };
     });
     return newIndex;
+  }, []);
+
+  const setDayDate = useCallback((index: number, date: string) => {
+    setState((s) => ({
+      ...s,
+      days: s.days.map((d) => (d.index === index ? { ...d, date } : d)),
+    }));
   }, []);
 
   const removeDay = useCallback((index: number) => {
@@ -293,6 +302,7 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     ensureDefaultDay,
     addDay,
     removeDay,
+    setDayDate,
     addSection,
     renameSection,
     updateSectionGuests,
