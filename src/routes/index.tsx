@@ -217,7 +217,7 @@ function ConfigureStep() {
         {/* MIDDLE — Variants */}
         <section>
           {/* Active section context strip */}
-          {activeSection ? (
+          {mounted && activeSection ? (
             <div className="border-accent/30 bg-accent-soft/60 mb-5 flex flex-col gap-1 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
