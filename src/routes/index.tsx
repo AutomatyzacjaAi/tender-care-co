@@ -19,14 +19,16 @@ import { PLN, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/configure")({
+export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Krok 2 — Konfiguracja menu · Jurek Catering" },
+      { title: "Krok 1 — Konfiguracja menu · Jurek Catering" },
       {
         name: "description",
-        content: "Wybierz pakiety menu na każdy dzień wydarzenia.",
+        content: "Skonfiguruj menu cateringowe dla swojego wydarzenia: dodaj dni, sekcje (przerwy, lunch, kolacje) i wybierz warianty menu.",
       },
+      { property: "og:title", content: "Konfigurator oferty cateringowej · Jurek Catering" },
+      { property: "og:description", content: "Stwórz w 3 krokach ofertę cateringową dopasowaną do Twojego wydarzenia." },
     ],
   }),
   component: ConfigureStep,
@@ -45,7 +47,9 @@ function ConfigureStep() {
   const navigate = useNavigate();
   const {
     state,
-    syncDaysFromContact,
+    ensureDefaultDay,
+    addDay,
+    removeDay,
     addSection,
     removeSection,
     updateSectionGuests,
@@ -62,29 +66,23 @@ function ConfigureStep() {
   const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
 
   // New section dialog
-  const [newSectionFor, setNewSectionFor] = useState<string | null>(null);
+  const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
   const [newSectionName, setNewSectionName] = useState("");
   const [newSectionTime, setNewSectionTime] = useState("");
   const [newSectionGuests, setNewSectionGuests] = useState<number>(
     state.contact.defaultGuests || 100,
   );
 
-  // Guard: if user lands here without contact data, redirect to step 1
+  // Ensure at least one day exists when entering the configurator
   useEffect(() => {
-    if (!state.contact.startDate || !state.contact.endDate) {
-      navigate({ to: "/" });
-      return;
-    }
-    if (state.days.length === 0) {
-      syncDaysFromContact();
-    }
-  }, [state.contact.startDate, state.contact.endDate, state.days.length, navigate, syncDaysFromContact]);
+    ensureDefaultDay();
+  }, [ensureDefaultDay]);
 
   const activeSectionId = state.activeSectionId;
   const activeSection = useMemo(() => {
     for (const d of state.days) {
       const sec = d.sections.find((s) => s.id === activeSectionId);
-      if (sec) return { section: sec, date: d.date };
+      if (sec) return { section: sec, dayIndex: d.index };
     }
     return null;
   }, [state.days, activeSectionId]);
@@ -97,15 +95,15 @@ function ConfigureStep() {
     }
   }, [activeSectionId, state.days, setActiveSection]);
 
-  function openNewSection(date: string) {
-    setNewSectionFor(date);
+  function openNewSection(dayIndex: number) {
+    setNewSectionFor(dayIndex);
     setNewSectionName("");
     setNewSectionTime("");
     setNewSectionGuests(state.contact.defaultGuests || 100);
   }
 
   function commitNewSection() {
-    if (!newSectionFor) return;
+    if (newSectionFor === null) return;
     const name = newSectionName.trim();
     if (!name) return;
     addSection(newSectionFor, name, newSectionGuests, newSectionTime || undefined);
