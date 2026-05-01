@@ -277,11 +277,11 @@ function ConfigureStep() {
             </p>
           </div>
           <Button
-            onClick={() => navigate({ to: "/summary" })}
+            onClick={() => navigate({ to: "/contact" })}
             disabled={totalItemsCount === 0}
             className="bg-accent text-accent-foreground hover:bg-accent-muted"
           >
-            Podsumowanie →
+            Dalej — dane kontaktowe →
           </Button>
         </div>
       </div>
