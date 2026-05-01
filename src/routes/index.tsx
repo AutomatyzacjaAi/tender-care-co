@@ -712,35 +712,35 @@ function VariantAccordionRow({
 }: {
   variant: Variant;
   index: number;
-  onAdd: () => void;
+  onAdd: (menuId: string) => void;
   canAdd: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
   return (
     <div className="bg-surface-elevated">
-      <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4">
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="flex flex-1 items-center gap-3 text-left"
-          aria-expanded={open}
-        >
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-              open && "rotate-180",
-            )}
-          />
-          <span className="text-muted-foreground hidden font-mono text-[10px] tracking-widest sm:inline">
-            0{index}
-          </span>
-          <span className="font-serif text-base font-medium text-foreground sm:text-lg">
-            Wariant {index} · {variant.name}
-          </span>
-          <span className="text-muted-foreground hidden text-xs italic sm:inline">
-            {variant.tagline}
-          </span>
-        </button>
+      {/* Wariant — nagłówek z ceną */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="hover:bg-surface-sunken/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors sm:px-5 sm:py-4"
+        aria-expanded={open}
+      >
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+        />
+        <span className="text-muted-foreground hidden font-mono text-[10px] tracking-widest sm:inline">
+          0{index}
+        </span>
+        <div className="flex-1">
+          <p className="font-serif text-base font-medium text-foreground sm:text-lg">
+            {variant.name}
+          </p>
+          <p className="text-muted-foreground text-xs italic">{variant.tagline}</p>
+        </div>
         <div className="text-right shrink-0">
           <p className="font-serif text-base font-medium text-foreground sm:text-lg">
             {PLN.format(variant.pricePerGuest)}
@@ -749,28 +749,58 @@ function VariantAccordionRow({
             {unitLabel}
           </p>
         </div>
-        <button
-          onClick={onAdd}
-          disabled={!canAdd}
-          className="bg-accent text-accent-foreground hover:bg-accent-muted flex shrink-0 items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Dodaj
-        </button>
-      </div>
+      </button>
+
+      {/* Lista menu w wariancie */}
       {open && (
-        <div className="bg-surface-sunken/40 border-border-soft border-t px-4 py-4 sm:px-5">
-          <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            Menu — pełny zestaw ({variant.menu.length})
-          </p>
-          <ul className="grid gap-1.5 text-sm leading-snug text-foreground sm:grid-cols-2">
-            {variant.menu.map((item, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-accent mt-0.5">·</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="bg-surface-sunken/30 border-border-soft divide-border-soft divide-y border-t">
+          {variant.menus.map((menu) => {
+            const menuOpen = openMenuId === menu.id;
+            return (
+              <div key={menu.id}>
+                <div className="flex items-center gap-3 px-4 py-2.5 sm:px-8">
+                  <button
+                    onClick={() => setOpenMenuId(menuOpen ? null : menu.id)}
+                    className="flex flex-1 items-center gap-2 text-left"
+                    aria-expanded={menuOpen}
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                        menuOpen && "rotate-180",
+                      )}
+                    />
+                    <span className="text-foreground text-sm font-medium">
+                      {menu.name}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      · {menu.items.length} pozycji
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => onAdd(menu.id)}
+                    disabled={!canAdd}
+                    className="bg-accent text-accent-foreground hover:bg-accent-muted flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Dodaj
+                  </button>
+                </div>
+                {menuOpen && (
+                  <div className="bg-surface px-4 pb-4 pt-1 sm:px-8">
+                    <ul className="grid gap-1.5 text-sm leading-snug text-foreground sm:grid-cols-2">
+                      {menu.items.map((item, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="text-accent mt-0.5">·</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
