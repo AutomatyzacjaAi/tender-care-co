@@ -45,6 +45,12 @@ export const Route = createRootRoute({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Jurek Catering — Kreator oferty" },
+      { name: "description", content: "Your Idea Hub is an interactive event configuration application for corporate clients and large events." },
+      { property: "og:description", content: "Your Idea Hub is an interactive event configuration application for corporate clients and large events." },
+      { name: "twitter:description", content: "Your Idea Hub is an interactive event configuration application for corporate clients and large events." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3e9dcc2b-1595-4a09-8e7a-bf2f1467b5eb/id-preview-bb382047--8c68959a-818c-4b33-ace1-deb2ced97e25.lovable.app-1777635968833.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3e9dcc2b-1595-4a09-8e7a-bf2f1467b5eb/id-preview-bb382047--8c68959a-818c-4b33-ace1-deb2ced97e25.lovable.app-1777635968833.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
