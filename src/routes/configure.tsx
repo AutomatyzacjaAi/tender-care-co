@@ -132,7 +132,7 @@ function ConfigureStep() {
   );
 
   return (
-    <div className="bg-surface min-h-screen pb-20 lg:pb-0">
+    <div className="bg-surface min-h-screen pb-20">
       <BrandHeader right={<Stepper />} />
 
       {/* TOP BAR — Days & Sections */}
