@@ -210,31 +210,37 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, activeSectionId: sectionId }));
   }, []);
 
-  const addItem = useCallback((sectionId: string, variantId: string, guests?: number) => {
-    setState((s) => {
-      const itemId = uid();
-      let sectionGuests = s.contact.defaultGuests ?? 100;
-      for (const d of s.days) {
-        const sec = d.sections.find((x) => x.id === sectionId);
-        if (sec) {
-          sectionGuests = sec.guests;
-          break;
+  const addItem = useCallback(
+    (sectionId: string, variantId: string, menuId?: string, guests?: number) => {
+      setState((s) => {
+        const itemId = uid();
+        let sectionGuests = s.contact.defaultGuests ?? 100;
+        for (const d of s.days) {
+          const sec = d.sections.find((x) => x.id === sectionId);
+          if (sec) {
+            sectionGuests = sec.guests;
+            break;
+          }
         }
-      }
-      const g = guests ?? sectionGuests;
-      return {
-        ...s,
-        days: s.days.map((d) => ({
-          ...d,
-          sections: d.sections.map((sec) =>
-            sec.id === sectionId
-              ? { ...sec, items: [...sec.items, { id: itemId, variantId, guests: g }] }
-              : sec,
-          ),
-        })),
-      };
-    });
-  }, []);
+        const g = guests ?? sectionGuests;
+        return {
+          ...s,
+          days: s.days.map((d) => ({
+            ...d,
+            sections: d.sections.map((sec) =>
+              sec.id === sectionId
+                ? {
+                    ...sec,
+                    items: [...sec.items, { id: itemId, variantId, menuId, guests: g }],
+                  }
+                : sec,
+            ),
+          })),
+        };
+      });
+    },
+    [],
+  );
 
   const updateItemGuests = useCallback((sectionId: string, itemId: string, guests: number) => {
     setState((s) => ({
