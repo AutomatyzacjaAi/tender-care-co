@@ -65,6 +65,9 @@ function ConfigureStep() {
     [activeCategoryId],
   );
   const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
+  // Sidebar tree state (e-commerce style) — pilot: Przerwa kawowa
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>("coffee-break");
+  const [expandedVariantId, setExpandedVariantId] = useState<string | null>(null);
 
   // New section dialog
   const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
