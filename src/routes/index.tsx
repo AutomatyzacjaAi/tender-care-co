@@ -640,7 +640,7 @@ function SectionsTopBar({
           </p>
         </div>
         <p className="text-muted-foreground mb-3 w-full text-xs leading-relaxed sm:text-[13px]">
-          Najpierw wybierz datę, a następnie dodawaj kategorie do tego dnia (np. <span className="text-foreground font-medium">Przerwa kawowa, 11:00</span>, Lunch, Kolacja).
+          Najpierw dodaj dzień i wybierz datę, a następnie dodawaj kategorie do tego dnia (np. <span className="text-foreground font-medium">Przerwa kawowa, 11:00</span>, Lunch, Kolacja). Do jednego dnia możesz dodać wiele kategorii.
         </p>
         <div className="-mx-4 flex flex-col gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
           {state.days.map((d) => (
