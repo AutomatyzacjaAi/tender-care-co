@@ -673,9 +673,6 @@ function SectionsTopBar({
                   </button>
                 )}
               </div>
-              {d.sections.length === 0 && (
-                <span className="text-muted-foreground text-xs italic">brak sekcji</span>
-              )}
               {d.sections.map((sec) => {
                 const isActive = sec.id === activeSectionId;
                 return (
