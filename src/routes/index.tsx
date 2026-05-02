@@ -187,21 +187,39 @@ function ConfigureStep() {
               </button>
             ))}
           </div>
-          {/* Desktop: vertical list */}
-          <ul className="hidden flex-col gap-1 lg:flex">
+          {/* Desktop: vertical tree (kategoria → wariant → menu) */}
+          <ul className="hidden flex-col gap-0.5 lg:flex">
             {CATALOG.map((cat) => {
               const isActive = cat.id === activeCategoryId;
+              const isTreeCategory = cat.id === "coffee-break"; // pilot
+              const isExpanded = isTreeCategory && expandedCategoryId === cat.id;
               return (
                 <li key={cat.id}>
                   <button
-                    onClick={() => setActiveCategoryId(cat.id)}
+                    onClick={() => {
+                      setActiveCategoryId(cat.id);
+                      if (isTreeCategory) {
+                        setExpandedCategoryId((prev) => (prev === cat.id ? null : cat.id));
+                      }
+                    }}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                      "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors",
                       isActive
                         ? "bg-accent-soft text-accent"
                         : "text-foreground hover:bg-surface-sunken",
                     )}
                   >
+                    {isTreeCategory ? (
+                      <ChevronDown
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0 transition-transform",
+                          isExpanded ? "rotate-0" : "-rotate-90",
+                          isActive ? "text-accent" : "text-muted-foreground",
+                        )}
+                      />
+                    ) : (
+                      <span className="w-3.5" />
+                    )}
                     <span
                       className={cn(
                         "font-mono text-[10px] tracking-widest",
@@ -210,8 +228,77 @@ function ConfigureStep() {
                     >
                       {cat.symbol}
                     </span>
-                    <span className="text-sm font-medium leading-tight">{cat.name}</span>
+                    <span className="flex-1 text-sm font-medium leading-tight">{cat.name}</span>
                   </button>
+
+                  {/* Warianty pod kategorią (drzewo) */}
+                  {isTreeCategory && isExpanded && (
+                    <ul className="ml-3 mt-0.5 space-y-0.5 border-l border-border-soft pl-2">
+                      {cat.variants.map((variant) => {
+                        const variantOpen = expandedVariantId === variant.id;
+                        const unitLabel = variant.pricingUnit === "per_guest" ? "/ os" : "/ szt";
+                        return (
+                          <li key={variant.id}>
+                            <button
+                              onClick={() =>
+                                setExpandedVariantId((prev) =>
+                                  prev === variant.id ? null : variant.id,
+                                )
+                              }
+                              className={cn(
+                                "flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
+                                variantOpen
+                                  ? "bg-surface-sunken text-foreground"
+                                  : "text-foreground hover:bg-surface-sunken/60",
+                              )}
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "h-3 w-3 shrink-0 text-muted-foreground transition-transform",
+                                  variantOpen ? "rotate-0" : "-rotate-90",
+                                )}
+                              />
+                              <span className="flex-1 truncate font-medium">{variant.name}</span>
+                              <span className="text-muted-foreground tabular-nums">
+                                {PLN.format(variant.pricePerGuest)}
+                                <span className="ml-0.5 text-[9px]">{unitLabel}</span>
+                              </span>
+                            </button>
+
+                            {/* Menu pod wariantem */}
+                            {variantOpen && (
+                              <ul className="ml-4 mt-0.5 space-y-0.5 border-l border-border-soft pl-2">
+                                {variant.menus.map((menu) => (
+                                  <li
+                                    key={menu.id}
+                                    className="flex items-center gap-1.5 px-1.5 py-1 text-xs"
+                                  >
+                                    <span className="text-muted-foreground">·</span>
+                                    <span className="flex-1 truncate text-foreground">
+                                      {menu.name}
+                                    </span>
+                                    <button
+                                      onClick={() => handleAddVariant(variant, menu.id)}
+                                      disabled={!mounted || !activeSection}
+                                      className="text-accent hover:text-accent-foreground hover:bg-accent inline-flex shrink-0 items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                                      title={
+                                        !activeSection
+                                          ? "Najpierw wybierz sekcję na górze"
+                                          : `Dodaj ${menu.name} do sekcji`
+                                      }
+                                    >
+                                      <Plus className="h-2.5 w-2.5" />
+                                      Dodaj
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </li>
               );
             })}
