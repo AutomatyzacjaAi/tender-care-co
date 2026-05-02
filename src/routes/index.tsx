@@ -318,42 +318,87 @@ function ConfigureStep() {
             </div>
           )}
 
-          <div className="mb-6">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {activeCategory.symbol} · Kategoria
-            </p>
-            <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
-              {activeCategory.name}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              {activeCategory.description}
-            </p>
-          </div>
-
           {activeCategory.id === "coffee-break" ? (
-            <div className="bg-surface-elevated border-border-soft divide-border-soft divide-y overflow-hidden rounded-2xl border">
-              {activeCategory.variants.map((variant, i) => (
-                <VariantAccordionRow
-                  key={variant.id}
-                  variant={variant}
-                  index={i + 1}
-                  onAdd={(menuId) => handleAddVariant(variant, menuId)}
-                  canAdd={mounted && !!activeSection}
-                />
-              ))}
-            </div>
+            <>
+              <div className="mb-6">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {activeCategory.symbol} · Kategoria
+                  {activeVariant && activeVariant.category.id === "coffee-break" && (
+                    <> · {activeVariant.variant.name}</>
+                  )}
+                </p>
+                <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
+                  {activeVariant && activeVariant.category.id === "coffee-break"
+                    ? `${activeCategory.name} — ${activeVariant.variant.name}`
+                    : activeCategory.name}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  {activeVariant && activeVariant.category.id === "coffee-break"
+                    ? activeVariant.variant.tagline
+                    : activeCategory.description}
+                </p>
+                {activeVariant && activeVariant.category.id === "coffee-break" && (
+                  <p className="text-muted-foreground mt-2 text-xs">
+                    Cena{" "}
+                    <span className="text-foreground font-medium">
+                      {PLN.format(activeVariant.variant.pricePerGuest)}
+                    </span>{" "}
+                    / osoba — wybierz jedno z {activeVariant.variant.menus.length} menu poniżej.
+                  </p>
+                )}
+              </div>
+
+              {activeVariant && activeVariant.category.id === "coffee-break" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {activeVariant.variant.menus.map((menu) => (
+                    <MenuCard
+                      key={menu.id}
+                      variant={activeVariant.variant}
+                      menu={menu}
+                      onPreview={() =>
+                        setPreviewMenu({ variant: activeVariant.variant, menuId: menu.id })
+                      }
+                      onAdd={() => handleAddVariant(activeVariant.variant, menu.id)}
+                      canAdd={mounted && !!activeSection}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="border-border bg-surface-sunken/40 rounded-2xl border border-dashed px-6 py-10 text-center">
+                  <p className="text-foreground font-serif text-lg">
+                    Wybierz wariant z lewego panelu
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    Każdy wariant zawiera 3 menu do wyboru w danej cenie.
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {activeCategory.variants.map((variant) => (
-                <VariantCard
-                  key={variant.id}
-                  variant={variant}
-                  onPreview={() => setPreviewVariant(variant)}
-                  onAdd={() => handleAddVariant(variant)}
-                  canAdd={mounted && !!activeSection}
-                />
-              ))}
-            </div>
+            <>
+              <div className="mb-6">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {activeCategory.symbol} · Kategoria
+                </p>
+                <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
+                  {activeCategory.name}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  {activeCategory.description}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {activeCategory.variants.map((variant) => (
+                  <VariantCard
+                    key={variant.id}
+                    variant={variant}
+                    onPreview={() => setPreviewVariant(variant)}
+                    onAdd={() => handleAddVariant(variant)}
+                    canAdd={mounted && !!activeSection}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </section>
 
