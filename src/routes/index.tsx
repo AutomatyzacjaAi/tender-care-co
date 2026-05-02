@@ -63,8 +63,10 @@ function ConfigureStep() {
     updateSectionGuests,
     setActiveSection,
     addItem,
+    removeItem,
     totals,
   } = useOffer();
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>(CATALOG[0].id);
   const activeCategory = useMemo(
