@@ -416,17 +416,33 @@ function ConfigureStep() {
       {/* Sticky bottom bar — total + continue */}
       <div className="bg-surface-elevated/95 border-border-soft fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div>
-            <p className="text-xs text-muted-foreground">
-              {mounted ? totalItemsCount : 0}{" "}
-              {(mounted ? totalItemsCount : 0) === 1 ? "pozycja" : "pozycji"} ·{" "}
-              {mounted ? totalSectionsCount : 0}{" "}
-              {(mounted ? totalSectionsCount : 0) === 1 ? "sekcja" : "sekcji"}
-            </p>
-            <p className="font-serif text-lg font-medium text-foreground">
-              {PLN.format(mounted ? totals.brutto : 0)}{" "}
-              <span className="text-muted-foreground text-xs font-normal">brutto</span>
-            </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSummaryOpen(true)}
+              disabled={!mounted || totalItemsCount === 0}
+              aria-label="Pokaż podsumowanie wybranych pozycji"
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-full border transition-colors",
+                "border-border-soft bg-surface text-foreground hover:bg-surface-sunken",
+                (!mounted || totalItemsCount === 0) && "cursor-not-allowed opacity-40",
+              )}
+              title="Pokaż podsumowanie"
+            >
+              <ChevronUp className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="text-xs text-muted-foreground">
+                {mounted ? totalItemsCount : 0}{" "}
+                {(mounted ? totalItemsCount : 0) === 1 ? "pozycja" : "pozycji"} ·{" "}
+                {mounted ? totalSectionsCount : 0}{" "}
+                {(mounted ? totalSectionsCount : 0) === 1 ? "sekcja" : "sekcji"}
+              </p>
+              <p className="font-serif text-lg font-medium text-foreground">
+                {PLN.format(mounted ? totals.brutto : 0)}{" "}
+                <span className="text-muted-foreground text-xs font-normal">brutto</span>
+              </p>
+            </div>
           </div>
           <Button
             onClick={() => navigate({ to: "/contact" })}
