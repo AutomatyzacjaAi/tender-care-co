@@ -67,7 +67,17 @@ function ConfigureStep() {
   const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
   // Sidebar tree state (e-commerce style) — pilot: Przerwa kawowa
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>("coffee-break");
-  const [expandedVariantId, setExpandedVariantId] = useState<string | null>(null);
+  const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
+  const [previewMenu, setPreviewMenu] = useState<{ variant: Variant; menuId: string } | null>(null);
+
+  const activeVariant = useMemo(() => {
+    if (!activeVariantId) return null;
+    for (const cat of CATALOG) {
+      const v = cat.variants.find((x) => x.id === activeVariantId);
+      if (v) return { category: cat, variant: v };
+    }
+    return null;
+  }, [activeVariantId]);
 
   // New section dialog
   const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
@@ -200,6 +210,8 @@ function ConfigureStep() {
                       setActiveCategoryId(cat.id);
                       if (isTreeCategory) {
                         setExpandedCategoryId((prev) => (prev === cat.id ? null : cat.id));
+                      } else {
+                        setActiveVariantId(null);
                       }
                     }}
                     className={cn(
@@ -235,65 +247,35 @@ function ConfigureStep() {
                   {isTreeCategory && isExpanded && (
                     <ul className="ml-3 mt-0.5 space-y-0.5 border-l border-border-soft pl-2">
                       {cat.variants.map((variant) => {
-                        const variantOpen = expandedVariantId === variant.id;
+                        const variantActive = activeVariantId === variant.id;
                         const unitLabel = variant.pricingUnit === "per_guest" ? "/ os" : "/ szt";
                         return (
                           <li key={variant.id}>
                             <button
-                              onClick={() =>
-                                setExpandedVariantId((prev) =>
-                                  prev === variant.id ? null : variant.id,
-                                )
-                              }
+                              onClick={() => {
+                                setActiveCategoryId(cat.id);
+                                setActiveVariantId(variant.id);
+                              }}
                               className={cn(
                                 "flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
-                                variantOpen
-                                  ? "bg-surface-sunken text-foreground"
+                                variantActive
+                                  ? "bg-accent text-accent-foreground"
                                   : "text-foreground hover:bg-surface-sunken/60",
                               )}
                             >
-                              <ChevronDown
-                                className={cn(
-                                  "h-3 w-3 shrink-0 text-muted-foreground transition-transform",
-                                  variantOpen ? "rotate-0" : "-rotate-90",
-                                )}
-                              />
                               <span className="flex-1 truncate font-medium">{variant.name}</span>
-                              <span className="text-muted-foreground tabular-nums">
+                              <span
+                                className={cn(
+                                  "tabular-nums",
+                                  variantActive
+                                    ? "text-accent-foreground/90"
+                                    : "text-muted-foreground",
+                                )}
+                              >
                                 {PLN.format(variant.pricePerGuest)}
                                 <span className="ml-0.5 text-[9px]">{unitLabel}</span>
                               </span>
                             </button>
-
-                            {/* Menu pod wariantem */}
-                            {variantOpen && (
-                              <ul className="ml-4 mt-0.5 space-y-0.5 border-l border-border-soft pl-2">
-                                {variant.menus.map((menu) => (
-                                  <li
-                                    key={menu.id}
-                                    className="flex items-center gap-1.5 px-1.5 py-1 text-xs"
-                                  >
-                                    <span className="text-muted-foreground">·</span>
-                                    <span className="flex-1 truncate text-foreground">
-                                      {menu.name}
-                                    </span>
-                                    <button
-                                      onClick={() => handleAddVariant(variant, menu.id)}
-                                      disabled={!mounted || !activeSection}
-                                      className="text-accent hover:text-accent-foreground hover:bg-accent inline-flex shrink-0 items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-                                      title={
-                                        !activeSection
-                                          ? "Najpierw wybierz sekcję na górze"
-                                          : `Dodaj ${menu.name} do sekcji`
-                                      }
-                                    >
-                                      <Plus className="h-2.5 w-2.5" />
-                                      Dodaj
-                                    </button>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
                           </li>
                         );
                       })}
@@ -336,42 +318,87 @@ function ConfigureStep() {
             </div>
           )}
 
-          <div className="mb-6">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              {activeCategory.symbol} · Kategoria
-            </p>
-            <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
-              {activeCategory.name}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              {activeCategory.description}
-            </p>
-          </div>
-
           {activeCategory.id === "coffee-break" ? (
-            <div className="bg-surface-elevated border-border-soft divide-border-soft divide-y overflow-hidden rounded-2xl border">
-              {activeCategory.variants.map((variant, i) => (
-                <VariantAccordionRow
-                  key={variant.id}
-                  variant={variant}
-                  index={i + 1}
-                  onAdd={(menuId) => handleAddVariant(variant, menuId)}
-                  canAdd={mounted && !!activeSection}
-                />
-              ))}
-            </div>
+            <>
+              <div className="mb-6">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {activeCategory.symbol} · Kategoria
+                  {activeVariant && activeVariant.category.id === "coffee-break" && (
+                    <> · {activeVariant.variant.name}</>
+                  )}
+                </p>
+                <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
+                  {activeVariant && activeVariant.category.id === "coffee-break"
+                    ? `${activeCategory.name} — ${activeVariant.variant.name}`
+                    : activeCategory.name}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  {activeVariant && activeVariant.category.id === "coffee-break"
+                    ? activeVariant.variant.tagline
+                    : activeCategory.description}
+                </p>
+                {activeVariant && activeVariant.category.id === "coffee-break" && (
+                  <p className="text-muted-foreground mt-2 text-xs">
+                    Cena{" "}
+                    <span className="text-foreground font-medium">
+                      {PLN.format(activeVariant.variant.pricePerGuest)}
+                    </span>{" "}
+                    / osoba — wybierz jedno z {activeVariant.variant.menus.length} menu poniżej.
+                  </p>
+                )}
+              </div>
+
+              {activeVariant && activeVariant.category.id === "coffee-break" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {activeVariant.variant.menus.map((menu) => (
+                    <MenuCard
+                      key={menu.id}
+                      variant={activeVariant.variant}
+                      menu={menu}
+                      onPreview={() =>
+                        setPreviewMenu({ variant: activeVariant.variant, menuId: menu.id })
+                      }
+                      onAdd={() => handleAddVariant(activeVariant.variant, menu.id)}
+                      canAdd={mounted && !!activeSection}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="border-border bg-surface-sunken/40 rounded-2xl border border-dashed px-6 py-10 text-center">
+                  <p className="text-foreground font-serif text-lg">
+                    Wybierz wariant z lewego panelu
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    Każdy wariant zawiera 3 menu do wyboru w danej cenie.
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {activeCategory.variants.map((variant) => (
-                <VariantCard
-                  key={variant.id}
-                  variant={variant}
-                  onPreview={() => setPreviewVariant(variant)}
-                  onAdd={() => handleAddVariant(variant)}
-                  canAdd={mounted && !!activeSection}
-                />
-              ))}
-            </div>
+            <>
+              <div className="mb-6">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {activeCategory.symbol} · Kategoria
+                </p>
+                <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
+                  {activeCategory.name}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  {activeCategory.description}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {activeCategory.variants.map((variant) => (
+                  <VariantCard
+                    key={variant.id}
+                    variant={variant}
+                    onPreview={() => setPreviewVariant(variant)}
+                    onAdd={() => handleAddVariant(variant)}
+                    canAdd={mounted && !!activeSection}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </section>
 
@@ -902,5 +929,67 @@ function VariantAccordionRow({
         </div>
       )}
     </div>
+  );
+}
+
+function MenuCard({
+  variant,
+  menu,
+  onPreview,
+  onAdd,
+  canAdd,
+}: {
+  variant: Variant;
+  menu: { id: string; name: string; items: string[] };
+  onPreview: () => void;
+  onAdd: () => void;
+  canAdd: boolean;
+}) {
+  const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
+  return (
+    <article className="bg-surface-elevated border-border-soft group flex flex-col overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)]">
+      <div className="border-border-soft flex items-baseline justify-between gap-3 border-b px-4 py-3">
+        <h3 className="font-serif text-lg font-medium leading-tight text-foreground">
+          {menu.name}
+        </h3>
+        <div className="text-right shrink-0">
+          <p className="font-serif text-base font-medium text-foreground">
+            {PLN.format(variant.pricePerGuest)}
+          </p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            {unitLabel}
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col px-4 py-3">
+        <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          W menu ({menu.items.length})
+        </p>
+        <ul className="mb-3 space-y-1 text-[13px] leading-snug text-foreground">
+          {menu.items.map((item, i) => (
+            <li key={i} className="flex gap-1.5">
+              <span className="text-accent mt-0.5">·</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-auto flex gap-2 pt-2">
+          <button
+            onClick={onPreview}
+            className="border-border-soft text-muted-foreground hover:text-foreground hover:bg-surface-sunken flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+          >
+            Szczegóły
+          </button>
+          <button
+            onClick={onAdd}
+            disabled={!canAdd}
+            className="bg-accent text-accent-foreground hover:bg-accent-muted flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Dodaj
+          </button>
+        </div>
+      </div>
+    </article>
   );
 }
