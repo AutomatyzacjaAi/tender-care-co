@@ -210,6 +210,8 @@ function ConfigureStep() {
                       setActiveCategoryId(cat.id);
                       if (isTreeCategory) {
                         setExpandedCategoryId((prev) => (prev === cat.id ? null : cat.id));
+                      } else {
+                        setActiveVariantId(null);
                       }
                     }}
                     className={cn(
