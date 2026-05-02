@@ -631,6 +631,118 @@ function ConfigureStep() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Summary side sheet — przegląd dodanych pozycji */}
+      <Sheet open={summaryOpen} onOpenChange={setSummaryOpen}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader className="text-left">
+            <SheetTitle className="font-serif text-2xl">Twoje wybory</SheetTitle>
+            <SheetDescription>
+              Podgląd wszystkich pozycji dodanych do oferty. Możesz usunąć każdą z nich tutaj, bez wracania do kategorii.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-6">
+            {state.days.every((d) => d.sections.every((s) => s.items.length === 0)) ? (
+              <p className="text-muted-foreground text-sm">
+                Nie dodano jeszcze żadnych pozycji.
+              </p>
+            ) : (
+              state.days.map((day) => {
+                const dayHasItems = day.sections.some((s) => s.items.length > 0);
+                if (!dayHasItems) return null;
+                return (
+                  <div key={day.index}>
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                      Dzień {day.index}
+                      {day.date && (
+                        <span className="ml-2 normal-case tracking-normal">· {formatDateShort(day.date)}</span>
+                      )}
+                    </p>
+                    <div className="mt-2 space-y-3">
+                      {day.sections.map((sec) => {
+                        if (sec.items.length === 0) return null;
+                        return (
+                          <div
+                            key={sec.id}
+                            className="border-border-soft bg-surface-sunken/40 rounded-lg border p-3"
+                          >
+                            <div className="mb-2 flex items-baseline justify-between gap-2">
+                              <p className="text-foreground font-serif text-base">
+                                {sec.name}
+                                {sec.time && (
+                                  <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+                                    · {sec.time}
+                                  </span>
+                                )}
+                              </p>
+                              <span className="text-muted-foreground text-[11px]">
+                                {sec.guests} os.
+                              </span>
+                            </div>
+                            <ul className="space-y-1.5">
+                              {sec.items.map((it) => {
+                                const found = findVariant(it.variantId);
+                                if (!found) return null;
+                                const menuName = it.menuId
+                                  ? found.variant.menus.find((m) => m.id === it.menuId)?.name
+                                  : undefined;
+                                const lineNet = found.variant.pricePerGuest * it.guests;
+                                const lineBrutto = lineNet * (1 + found.variant.vatRate);
+                                return (
+                                  <li
+                                    key={it.id}
+                                    className="flex items-start justify-between gap-2 text-sm"
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-foreground truncate">
+                                        {found.variant.name}
+                                        {menuName && (
+                                          <span className="text-muted-foreground"> · {menuName}</span>
+                                        )}
+                                      </p>
+                                      <p className="text-muted-foreground text-[11px]">
+                                        {found.category.name} · {PLN.format(lineBrutto)}
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        removeItem(sec.id, it.id);
+                                        toast.success(`Usunięto: ${found.variant.name}`);
+                                      }}
+                                      className="text-muted-foreground hover:text-destructive shrink-0 rounded-md p-1.5 transition-colors"
+                                      aria-label={`Usuń ${found.variant.name}`}
+                                      title="Usuń pozycję"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="border-border-soft mt-8 border-t pt-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
+                Razem brutto
+              </span>
+              <span className="font-serif text-xl font-medium text-foreground">
+                {PLN.format(totals.brutto)}
+              </span>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
