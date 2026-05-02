@@ -164,8 +164,8 @@ function ConfigureStep() {
         />
       )}
 
-      <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] lg:gap-10 lg:py-8">
-        {/* LEFT — Categories */}
+      <main className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[300px_1fr] lg:gap-10 lg:py-8">
+        {/* LEFT — Categories tree */}
         <aside className="lg:sticky lg:top-[calc(theme(spacing.20)+theme(spacing.32))] lg:self-start">
           <p className="mb-3 px-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Kategorie
