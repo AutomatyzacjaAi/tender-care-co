@@ -421,15 +421,16 @@ function ConfigureStep() {
               type="button"
               onClick={() => setSummaryOpen(true)}
               disabled={!mounted || totalItemsCount === 0}
-              aria-label="Pokaż podsumowanie wybranych pozycji"
+              aria-label="Zobacz wybory"
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full border transition-colors",
+                "flex h-10 items-center gap-2 rounded-full border px-4 transition-colors",
                 "border-border-soft bg-surface text-foreground hover:bg-surface-sunken",
                 (!mounted || totalItemsCount === 0) && "cursor-not-allowed opacity-40",
               )}
-              title="Pokaż podsumowanie"
+              title="Zobacz wybory"
             >
-              <ChevronUp className="h-5 w-5" />
+              <ChevronUp className="h-4 w-4" />
+              <span className="text-sm font-medium">Zobacz wybory</span>
             </button>
             <div>
               <p className="text-xs text-muted-foreground">
