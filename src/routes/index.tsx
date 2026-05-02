@@ -67,7 +67,17 @@ function ConfigureStep() {
   const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
   // Sidebar tree state (e-commerce style) — pilot: Przerwa kawowa
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>("coffee-break");
-  const [expandedVariantId, setExpandedVariantId] = useState<string | null>(null);
+  const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
+  const [previewMenu, setPreviewMenu] = useState<{ variant: Variant; menuId: string } | null>(null);
+
+  const activeVariant = useMemo(() => {
+    if (!activeVariantId) return null;
+    for (const cat of CATALOG) {
+      const v = cat.variants.find((x) => x.id === activeVariantId);
+      if (v) return { category: cat, variant: v };
+    }
+    return null;
+  }, [activeVariantId]);
 
   // New section dialog
   const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
