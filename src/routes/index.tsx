@@ -758,7 +758,7 @@ function SectionsTopBar({
                 className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex shrink-0 items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors"
               >
                 <Plus className="h-3 w-3" />
-                dodaj sekcję
+                dodaj kategorię
               </button>
             </div>
           ))}
