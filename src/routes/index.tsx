@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Check, ChevronDown, Plus, Trash2, Users } from "lucide-react";
+import { CalendarPlus, Check, ChevronDown, ChevronUp, Plus, Trash2, Users } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CATALOG, type Variant } from "@/data/catalog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { CATALOG, findVariant, type Variant } from "@/data/catalog";
 import { useOffer } from "@/context/OfferContext";
 import { PLN, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
