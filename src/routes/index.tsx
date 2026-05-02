@@ -382,16 +382,19 @@ function ConfigureStep() {
         <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div>
             <p className="text-xs text-muted-foreground">
-              {totalItemsCount} {totalItemsCount === 1 ? "pozycja" : "pozycji"} ·{" "}
-              {totalSectionsCount} {totalSectionsCount === 1 ? "sekcja" : "sekcji"}
+              {mounted ? totalItemsCount : 0}{" "}
+              {(mounted ? totalItemsCount : 0) === 1 ? "pozycja" : "pozycji"} ·{" "}
+              {mounted ? totalSectionsCount : 0}{" "}
+              {(mounted ? totalSectionsCount : 0) === 1 ? "sekcja" : "sekcji"}
             </p>
             <p className="font-serif text-lg font-medium text-foreground">
-              {PLN.format(totals.brutto)} <span className="text-muted-foreground text-xs font-normal">brutto</span>
+              {PLN.format(mounted ? totals.brutto : 0)}{" "}
+              <span className="text-muted-foreground text-xs font-normal">brutto</span>
             </p>
           </div>
           <Button
             onClick={() => navigate({ to: "/contact" })}
-            disabled={totalItemsCount === 0}
+            disabled={!mounted || totalItemsCount === 0}
             className="bg-accent text-accent-foreground hover:bg-accent-muted"
           >
             Dalej — dane kontaktowe →
