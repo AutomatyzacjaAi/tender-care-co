@@ -45,16 +45,12 @@ export function Stepper() {
           );
           return (
             <li key={step.id} className="flex items-center gap-2 sm:gap-3">
-              {isDone ? (
-                <Link
-                  to={step.path}
-                  className="hover:bg-accent-soft rounded-full px-1.5 py-1 transition-colors"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <span className="px-1.5 py-1">{content}</span>
-              )}
+              <Link
+                to={step.path}
+                className="hover:bg-accent-soft rounded-full px-1.5 py-1 transition-colors"
+              >
+                {content}
+              </Link>
               {idx < steps.length - 1 && (
                 <span
                   className={cn(
