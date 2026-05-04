@@ -448,11 +448,11 @@ function ConfigureStep() {
             </div>
           </div>
           <Button
-            onClick={() => navigate({ to: "/contact" })}
+            onClick={() => navigate({ to: "/summary" })}
             disabled={!mounted || totalItemsCount === 0}
             className="bg-accent text-accent-foreground hover:bg-accent-muted"
           >
-            Dalej — dane kontaktowe →
+            Dalej — podsumowanie →
           </Button>
         </div>
       </div>
