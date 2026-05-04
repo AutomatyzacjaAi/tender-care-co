@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Printer, Send, Pencil } from "lucide-react";
+import { Printer, Send, Pencil, FileCheck2 } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -22,54 +22,60 @@ export const Route = createFileRoute("/summary")({
   component: SummaryStep,
 });
 
+const CLIENT_TYPE_LABEL: Record<string, string> = {
+  private: "Osoba prywatna",
+  company: "Firma",
+  organization: "Organizacja",
+};
+
 function SummaryStep() {
   const navigate = useNavigate();
   const { state, totals } = useOffer();
 
   useEffect(() => {
-    if (!state.contact.eventName) navigate({ to: "/" });
-  }, [state.contact.eventName, navigate]);
+    if (!state.contact.fullName) navigate({ to: "/contact" });
+  }, [state.contact.fullName, navigate]);
 
-  // Stable order number derived from eventName + startDate (looks formal, no Date.now to avoid hydration mismatch)
-  const orderNumber = generateOrderNumber(state.contact.eventName, state.contact.startDate);
+  const orderNumber = generateOrderNumber(
+    state.contact.eventName || state.contact.fullName,
+    state.contact.startDate,
+  );
 
-  function send() {
-    toast.success("Dziękujemy! Skontaktujemy się w ciągu 24 godzin.", {
-      description: "Twoje zapytanie zostało wysłane do zespołu Jurek Catering.",
+  function sendInquiry() {
+    toast.success("Wstępne zapotrzebowanie zostało wysłane.", {
+      description: "Skontaktujemy się w ciągu 24 godzin, aby doprecyzować ofertę.",
+    });
+  }
+
+  function sendOrder() {
+    toast.success("Zamówienie zostało wysłane.", {
+      description: "Otrzymasz potwierdzenie na adres e-mail wraz z fakturą pro forma.",
     });
   }
 
   const hasItems = state.days.some((d) => d.sections.some((s) => s.items.length > 0));
 
   return (
-    <div className="bg-surface min-h-screen">
+    <div className="bg-surface min-h-screen pb-40">
       <div className="no-print">
         <BrandHeader right={<Stepper />} />
       </div>
 
-      {/* Action bar (no-print) */}
+      {/* Top bar — back to edit */}
       <div className="no-print border-border-soft bg-surface-elevated/60 border-b">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link to="/contact">
+            <Button variant="ghost" size="sm">
+              <Pencil className="mr-2 h-4 w-4" />
+              Edytuj dane
+            </Button>
+          </Link>
           <Link to="/">
             <Button variant="ghost" size="sm">
               <Pencil className="mr-2 h-4 w-4" />
-              Edytuj ofertę
+              Edytuj menu
             </Button>
           </Link>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              Pobierz PDF
-            </Button>
-            <Button
-              size="sm"
-              onClick={send}
-              className="bg-accent text-accent-foreground hover:bg-accent-muted"
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Wyślij zapytanie
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -81,11 +87,14 @@ function SummaryStep() {
             <header className="mb-10 flex items-start justify-between gap-6 border-b border-neutral-200 pb-6">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-neutral-500">
-                  Jurek Catering
+                  Od kogo
                 </p>
                 <h1 className="mt-2 font-serif text-2xl font-medium text-neutral-900">
-                  Order #{orderNumber}
+                  {state.contact.provider || "Jurek Catering"}
                 </h1>
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.22em] text-neutral-500">
+                  Order #{orderNumber}
+                </p>
               </div>
               <div className="text-right">
                 <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-neutral-500">
@@ -102,18 +111,21 @@ function SummaryStep() {
             <section className="mb-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
               <div>
                 <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-neutral-500">
-                  Customer details
+                  Dane klienta · {CLIENT_TYPE_LABEL[state.contact.clientType] ?? "—"}
                 </p>
                 <div className="space-y-0.5 text-sm leading-relaxed text-neutral-800">
                   <p className="font-medium">{state.contact.fullName || "—"}</p>
                   {state.contact.company && <p>{state.contact.company}</p>}
+                  {state.contact.nip && (
+                    <p className="text-neutral-600">NIP: {state.contact.nip}</p>
+                  )}
                   {state.contact.email && <p className="text-neutral-600">{state.contact.email}</p>}
                   {state.contact.phone && <p className="text-neutral-600">{state.contact.phone}</p>}
                 </div>
               </div>
               <div>
                 <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-neutral-500">
-                  Location details
+                  Lokalizacja
                 </p>
                 <div className="space-y-0.5 text-sm leading-relaxed text-neutral-800">
                   {state.contact.location ? (
@@ -128,31 +140,20 @@ function SummaryStep() {
             {/* Order meta */}
             <section className="mb-10">
               <h2 className="mb-4 font-serif text-lg font-medium text-neutral-900">
-                Order #{orderNumber} — {state.contact.eventName || "Wydarzenie"}
+                {state.contact.eventName || "Wydarzenie"}
               </h2>
               <dl className="divide-y divide-neutral-200 border-y border-neutral-200">
-                <Row label="Order name" value={state.contact.eventName || "—"} />
+                <Row label="Nazwa zamówienia" value={state.contact.eventName || "—"} />
                 <Row label="Status" value="Wstępna oferta" />
-                <Row
-                  label="Date"
-                  value={state.contact.startDate ? formatDateLong(state.contact.startDate) : "—"}
-                />
-                <Row
-                  label="End date"
-                  value={state.contact.endDate ? formatDateLong(state.contact.endDate) : "—"}
-                />
-                <Row
-                  label="Number of guests"
-                  value={String(state.contact.defaultGuests ?? 0)}
-                />
-                <Row label="Payment method" value="Faktura VAT" />
+                <Row label="Liczba osób (domyślna)" value={String(state.contact.defaultGuests ?? 0)} />
+                <Row label="Forma płatności" value={state.contact.clientType === "private" ? "Przelew" : "Faktura VAT"} />
               </dl>
             </section>
 
             {/* Event planning */}
             <section className="mb-10">
               <h2 className="mb-4 font-serif text-lg font-medium text-neutral-900">
-                Event planning
+                Plan wydarzenia
               </h2>
               {state.days.length === 0 && (
                 <p className="text-sm text-neutral-500">— brak zaplanowanych dni —</p>
@@ -176,17 +177,23 @@ function SummaryStep() {
                         <p className="pl-4 text-sm text-neutral-400">— brak sekcji —</p>
                       ) : (
                         <ul className="space-y-1 pl-4 text-sm text-neutral-700">
-                          {d.sections.map((sec) => (
-                            <li key={sec.id} className="flex gap-3">
-                              <span className="w-14 shrink-0 font-mono tabular-nums text-neutral-500">
-                                {sec.time || "—"}
-                              </span>
-                              <span>
-                                {sec.name}{" "}
-                                <span className="text-neutral-500">· {sec.guests} os.</span>
-                              </span>
-                            </li>
-                          ))}
+                          {d.sections.map((sec) => {
+                            const timeRange =
+                              sec.time && sec.endTime
+                                ? `${sec.time}–${sec.endTime}`
+                                : sec.time || sec.endTime || "—";
+                            return (
+                              <li key={sec.id} className="flex gap-3">
+                                <span className="w-24 shrink-0 font-mono tabular-nums text-neutral-500">
+                                  {timeRange}
+                                </span>
+                                <span>
+                                  {sec.name}{" "}
+                                  <span className="text-neutral-500">· {sec.guests} os.</span>
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       )}
                     </div>
@@ -197,7 +204,7 @@ function SummaryStep() {
 
             {/* Overview table */}
             <section className="mb-10">
-              <h2 className="mb-4 font-serif text-lg font-medium text-neutral-900">Overview</h2>
+              <h2 className="mb-4 font-serif text-lg font-medium text-neutral-900">Pozycje oferty</h2>
               {!hasItems ? (
                 <p className="text-sm text-neutral-500">
                   — brak pozycji w ofercie —
@@ -242,12 +249,12 @@ function SummaryStep() {
                 <div className="flex justify-end">
                   <div className="w-full max-w-sm space-y-2 text-sm">
                     <div className="flex justify-between border-t border-neutral-300 py-2 text-neutral-700">
-                      <span>Subtotal (excl. VAT)</span>
+                      <span>Suma netto</span>
                       <span className="tabular-nums">{PLN_DETAILED.format(totals.netto)}</span>
                     </div>
                     <div className="space-y-1 pb-2 text-xs text-neutral-600">
                       <p className="font-mono uppercase tracking-wider text-neutral-500">
-                        VAT specification
+                        Specyfikacja VAT
                       </p>
                       {Object.entries(totals.byVat).map(([rate, v]) => (
                         <div key={rate} className="flex justify-between">
@@ -260,7 +267,7 @@ function SummaryStep() {
                     </div>
                     <div className="flex items-baseline justify-between border-t-2 border-neutral-900 pt-3">
                       <span className="text-xs font-medium uppercase tracking-wider text-neutral-900">
-                        Total (incl. VAT)
+                        Razem brutto
                       </span>
                       <span className="font-serif text-xl font-medium text-neutral-900 tabular-nums">
                         {PLN_DETAILED.format(totals.brutto)}
@@ -274,12 +281,79 @@ function SummaryStep() {
             {/* Footer */}
             <footer className="border-t border-neutral-200 pt-5">
               <p className="text-center text-[10px] font-mono uppercase tracking-wider text-neutral-400">
-                Generated by Jurek Catering · Oferta wstępna · ceny mogą podlegać korekcie.
+                Wygenerowane przez {state.contact.provider || "Jurek Catering"} · Oferta wstępna · ceny mogą podlegać korekcie.
               </p>
             </footer>
           </div>
         </article>
       </main>
+
+      {/* Sticky bottom action bar */}
+      <div className="no-print bg-surface-elevated/95 border-border-soft fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur">
+        <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-end">
+            <ActionButton
+              variant="outline"
+              icon={<Printer className="mr-2 h-4 w-4" />}
+              label="Pobierz PDF"
+              description="Zapisz ofertę jako plik PDF do druku lub wysyłki."
+              onClick={() => window.print()}
+            />
+            <ActionButton
+              variant="default"
+              icon={<FileCheck2 className="mr-2 h-4 w-4" />}
+              label="Wyślij wstępne zapotrzebowanie"
+              description="Niezobowiązujące zapytanie — skontaktujemy się, by doprecyzować szczegóły."
+              onClick={sendInquiry}
+            />
+            <ActionButton
+              variant="accent"
+              icon={<Send className="mr-2 h-4 w-4" />}
+              label="Wyślij zamówienie"
+              description="Wiążące zamówienie cateringu — otrzymasz potwierdzenie i fakturę pro forma."
+              onClick={sendOrder}
+              disabled={!hasItems}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({
+  variant,
+  icon,
+  label,
+  description,
+  onClick,
+  disabled,
+}: {
+  variant: "outline" | "default" | "accent";
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-1.5 sm:max-w-xs">
+      <Button
+        variant={variant === "outline" ? "outline" : "default"}
+        onClick={onClick}
+        disabled={disabled}
+        className={
+          variant === "accent"
+            ? "bg-accent text-accent-foreground hover:bg-accent-muted"
+            : variant === "default"
+              ? "bg-foreground text-background hover:bg-foreground/90"
+              : ""
+        }
+      >
+        {icon}
+        {label}
+      </Button>
+      <p className="text-muted-foreground px-1 text-[11px] leading-snug">{description}</p>
     </div>
   );
 }
@@ -317,6 +391,10 @@ function DayRows({
         const showMenuName = (variant.menus.length > 1 || selectedMenu?.name !== "Menu") && selectedMenu;
         const line = variant.pricePerGuest * item.guests;
         const unit = variant.pricingUnit === "per_guest" ? "x" : "x";
+        const timeRange =
+          section.time && section.endTime
+            ? `${section.time}–${section.endTime}`
+            : section.time || section.endTime;
         return (
           <tr key={item.id} className="border-b border-neutral-100 align-top">
             <td className="py-2 pr-3 text-right tabular-nums text-neutral-700">
@@ -332,7 +410,7 @@ function DayRows({
               )}
               <span className="ml-2 text-xs text-neutral-500">
                 · {section.name}
-                {section.time && ` · ${section.time}`}
+                {timeRange && ` · ${timeRange}`}
               </span>
             </td>
             <td className="py-2 pr-3 text-right tabular-nums text-neutral-700">
@@ -351,8 +429,8 @@ function DayRows({
   );
 }
 
-function generateOrderNumber(eventName: string, startDate: string): string {
-  const seed = `${eventName}|${startDate}`;
+function generateOrderNumber(seedStr: string, startDate: string): string {
+  const seed = `${seedStr}|${startDate}`;
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = (hash * 31 + seed.charCodeAt(i)) | 0;
