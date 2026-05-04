@@ -660,9 +660,10 @@ function ConfigureStep() {
                             <div className="mb-2 flex items-baseline justify-between gap-2">
                               <p className="text-foreground font-serif text-base">
                                 {sec.name}
-                                {sec.time && (
+                                {(sec.time || sec.endTime) && (
                                   <span className="text-muted-foreground ml-1.5 text-xs font-normal">
-                                    · {sec.time}
+                                    · {sec.time || "—"}
+                                    {sec.endTime && ` – ${sec.endTime}`}
                                   </span>
                                 )}
                               </p>
@@ -816,14 +817,15 @@ function SectionsTopBar({
                     >
                       {isActive && <Check className="h-3 w-3" />}
                       <span>{sec.name}</span>
-                      {sec.time && (
+                      {(sec.time || sec.endTime) && (
                         <span
                           className={cn(
                             "text-[10px]",
                             isActive ? "text-accent-foreground/80" : "text-muted-foreground",
                           )}
                         >
-                          {sec.time}
+                          {sec.time || "—"}
+                          {sec.endTime && `–${sec.endTime}`}
                         </span>
                       )}
                     </button>
