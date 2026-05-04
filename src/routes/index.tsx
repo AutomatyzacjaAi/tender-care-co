@@ -308,9 +308,10 @@ function ConfigureStep() {
                 </p>
                 <p className="text-accent font-serif text-lg font-medium">
                   {activeSection.section.name}
-                  {activeSection.section.time && (
+                  {(activeSection.section.time || activeSection.section.endTime) && (
                     <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      · {activeSection.section.time}
+                      · {activeSection.section.time || "—"}
+                      {activeSection.section.endTime && ` – ${activeSection.section.endTime}`}
                     </span>
                   )}
                 </p>
