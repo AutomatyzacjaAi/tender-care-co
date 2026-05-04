@@ -41,14 +41,6 @@ export const Route = createFileRoute("/")({
   component: ConfigureStep,
 });
 
-const SECTION_PRESETS = [
-  { name: "Powitalna kawa", time: "09:00" },
-  { name: "Przerwa kawowa", time: "11:00" },
-  { name: "Lunch", time: "13:00" },
-  { name: "Przerwa popołudniowa", time: "15:30" },
-  { name: "Kolacja", time: "19:00" },
-  { name: "Cocktail / wieczór", time: "21:00" },
-];
 
 function ConfigureStep() {
   const navigate = useNavigate();
@@ -92,6 +84,7 @@ function ConfigureStep() {
   const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
   const [newSectionName, setNewSectionName] = useState("");
   const [newSectionTime, setNewSectionTime] = useState("");
+  const [newSectionEndTime, setNewSectionEndTime] = useState("");
   const [newSectionGuests, setNewSectionGuests] = useState<number>(
     state.contact.defaultGuests || 100,
   );
@@ -102,6 +95,14 @@ function ConfigureStep() {
     setMounted(true);
     ensureDefaultDay();
   }, [ensureDefaultDay]);
+
+  // Krok 1 (dane kontaktowe) musi być uzupełniony — wracamy do niego, jeśli brak imienia/e-maila.
+  useEffect(() => {
+    if (!mounted) return;
+    if (!state.contact.fullName.trim() || !state.contact.email.trim()) {
+      navigate({ to: "/contact" });
+    }
+  }, [mounted, state.contact.fullName, state.contact.email, navigate]);
 
   const activeSectionId = state.activeSectionId;
   const activeSection = useMemo(() => {
@@ -124,6 +125,7 @@ function ConfigureStep() {
     setNewSectionFor(dayIndex);
     setNewSectionName("");
     setNewSectionTime("");
+    setNewSectionEndTime("");
     setNewSectionGuests(state.contact.defaultGuests || 100);
   }
 
@@ -131,11 +133,18 @@ function ConfigureStep() {
     if (newSectionFor === null) return;
     const name = newSectionName.trim();
     if (!name) return;
-    addSection(newSectionFor, name, newSectionGuests, newSectionTime || undefined);
+    addSection(
+      newSectionFor,
+      name,
+      newSectionGuests,
+      newSectionTime || undefined,
+      newSectionEndTime || undefined,
+    );
     toast.success(`Sekcja "${name}" utworzona — wybierz teraz menu.`);
     setNewSectionFor(null);
     setNewSectionName("");
     setNewSectionTime("");
+    setNewSectionEndTime("");
   }
 
   function handleAddVariant(variant: Variant, menuId?: string) {
@@ -307,9 +316,10 @@ function ConfigureStep() {
                 </p>
                 <p className="text-accent font-serif text-lg font-medium">
                   {activeSection.section.name}
-                  {activeSection.section.time && (
+                  {(activeSection.section.time || activeSection.section.endTime) && (
                     <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      · {activeSection.section.time}
+                      · {activeSection.section.time || "—"}
+                      {activeSection.section.endTime && ` – ${activeSection.section.endTime}`}
                     </span>
                   )}
                 </p>
@@ -446,11 +456,11 @@ function ConfigureStep() {
             </div>
           </div>
           <Button
-            onClick={() => navigate({ to: "/contact" })}
+            onClick={() => navigate({ to: "/summary" })}
             disabled={!mounted || totalItemsCount === 0}
             className="bg-accent text-accent-foreground hover:bg-accent-muted"
           >
-            Dalej — dane kontaktowe →
+            Dalej — podsumowanie →
           </Button>
         </div>
       </div>
@@ -551,51 +561,38 @@ function ConfigureStep() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="mb-2 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Szybki wybór
+              <Label htmlFor="secName" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                Nazwa kategorii
               </Label>
-              <div className="flex flex-wrap gap-2">
-                {SECTION_PRESETS.map((p) => (
-                  <button
-                    key={p.name}
-                    onClick={() => {
-                      setNewSectionName(p.name);
-                      setNewSectionTime(p.time);
-                    }}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs transition-colors",
-                      newSectionName === p.name
-                        ? "bg-accent text-accent-foreground border-accent"
-                        : "border-border bg-surface-sunken text-foreground hover:bg-accent-soft",
-                    )}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+              <Input
+                id="secName"
+                placeholder="np. Przerwa kawowa, Lunch, Kolacja"
+                value={newSectionName}
+                onChange={(e) => setNewSectionName(e.target.value)}
+                autoFocus
+              />
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="secName" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Nazwa sekcji
-                </Label>
-                <Input
-                  id="secName"
-                  placeholder="np. Lunch"
-                  value={newSectionName}
-                  onChange={(e) => setNewSectionName(e.target.value)}
-                  autoFocus
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="secTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Godzina
+                  Od
                 </Label>
                 <Input
                   id="secTime"
                   type="time"
                   value={newSectionTime}
                   onChange={(e) => setNewSectionTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="secEndTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Do
+                </Label>
+                <Input
+                  id="secEndTime"
+                  type="time"
+                  value={newSectionEndTime}
+                  onChange={(e) => setNewSectionEndTime(e.target.value)}
                 />
               </div>
             </div>
@@ -671,9 +668,10 @@ function ConfigureStep() {
                             <div className="mb-2 flex items-baseline justify-between gap-2">
                               <p className="text-foreground font-serif text-base">
                                 {sec.name}
-                                {sec.time && (
+                                {(sec.time || sec.endTime) && (
                                   <span className="text-muted-foreground ml-1.5 text-xs font-normal">
-                                    · {sec.time}
+                                    · {sec.time || "—"}
+                                    {sec.endTime && ` – ${sec.endTime}`}
                                   </span>
                                 )}
                               </p>
@@ -827,14 +825,15 @@ function SectionsTopBar({
                     >
                       {isActive && <Check className="h-3 w-3" />}
                       <span>{sec.name}</span>
-                      {sec.time && (
+                      {(sec.time || sec.endTime) && (
                         <span
                           className={cn(
                             "text-[10px]",
                             isActive ? "text-accent-foreground/80" : "text-muted-foreground",
                           )}
                         >
-                          {sec.time}
+                          {sec.time || "—"}
+                          {sec.endTime && `–${sec.endTime}`}
                         </span>
                       )}
                     </button>
