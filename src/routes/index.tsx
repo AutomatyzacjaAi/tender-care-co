@@ -41,14 +41,6 @@ export const Route = createFileRoute("/")({
   component: ConfigureStep,
 });
 
-const SECTION_PRESETS = [
-  { name: "Powitalna kawa", time: "09:00" },
-  { name: "Przerwa kawowa", time: "11:00" },
-  { name: "Lunch", time: "13:00" },
-  { name: "Przerwa popołudniowa", time: "15:30" },
-  { name: "Kolacja", time: "19:00" },
-  { name: "Cocktail / wieczór", time: "21:00" },
-];
 
 function ConfigureStep() {
   const navigate = useNavigate();
@@ -92,6 +84,7 @@ function ConfigureStep() {
   const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
   const [newSectionName, setNewSectionName] = useState("");
   const [newSectionTime, setNewSectionTime] = useState("");
+  const [newSectionEndTime, setNewSectionEndTime] = useState("");
   const [newSectionGuests, setNewSectionGuests] = useState<number>(
     state.contact.defaultGuests || 100,
   );
