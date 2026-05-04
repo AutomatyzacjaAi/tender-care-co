@@ -96,6 +96,14 @@ function ConfigureStep() {
     ensureDefaultDay();
   }, [ensureDefaultDay]);
 
+  // Krok 1 (dane kontaktowe) musi być uzupełniony — wracamy do niego, jeśli brak imienia/e-maila.
+  useEffect(() => {
+    if (!mounted) return;
+    if (!state.contact.fullName.trim() || !state.contact.email.trim()) {
+      navigate({ to: "/contact" });
+    }
+  }, [mounted, state.contact.fullName, state.contact.email, navigate]);
+
   const activeSectionId = state.activeSectionId;
   const activeSection = useMemo(() => {
     for (const d of state.days) {
