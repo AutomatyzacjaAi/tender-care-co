@@ -117,6 +117,7 @@ function ConfigureStep() {
     setNewSectionFor(dayIndex);
     setNewSectionName("");
     setNewSectionTime("");
+    setNewSectionEndTime("");
     setNewSectionGuests(state.contact.defaultGuests || 100);
   }
 
@@ -124,11 +125,18 @@ function ConfigureStep() {
     if (newSectionFor === null) return;
     const name = newSectionName.trim();
     if (!name) return;
-    addSection(newSectionFor, name, newSectionGuests, newSectionTime || undefined);
+    addSection(
+      newSectionFor,
+      name,
+      newSectionGuests,
+      newSectionTime || undefined,
+      newSectionEndTime || undefined,
+    );
     toast.success(`Sekcja "${name}" utworzona — wybierz teraz menu.`);
     setNewSectionFor(null);
     setNewSectionName("");
     setNewSectionTime("");
+    setNewSectionEndTime("");
   }
 
   function handleAddVariant(variant: Variant, menuId?: string) {
@@ -544,51 +552,38 @@ function ConfigureStep() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="mb-2 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Szybki wybór
+              <Label htmlFor="secName" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                Nazwa kategorii
               </Label>
-              <div className="flex flex-wrap gap-2">
-                {SECTION_PRESETS.map((p) => (
-                  <button
-                    key={p.name}
-                    onClick={() => {
-                      setNewSectionName(p.name);
-                      setNewSectionTime(p.time);
-                    }}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs transition-colors",
-                      newSectionName === p.name
-                        ? "bg-accent text-accent-foreground border-accent"
-                        : "border-border bg-surface-sunken text-foreground hover:bg-accent-soft",
-                    )}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+              <Input
+                id="secName"
+                placeholder="np. Przerwa kawowa, Lunch, Kolacja"
+                value={newSectionName}
+                onChange={(e) => setNewSectionName(e.target.value)}
+                autoFocus
+              />
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="secName" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Nazwa sekcji
-                </Label>
-                <Input
-                  id="secName"
-                  placeholder="np. Lunch"
-                  value={newSectionName}
-                  onChange={(e) => setNewSectionName(e.target.value)}
-                  autoFocus
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="secTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Godzina
+                  Od
                 </Label>
                 <Input
                   id="secTime"
                   type="time"
                   value={newSectionTime}
                   onChange={(e) => setNewSectionTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="secEndTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Do
+                </Label>
+                <Input
+                  id="secEndTime"
+                  type="time"
+                  value={newSectionEndTime}
+                  onChange={(e) => setNewSectionEndTime(e.target.value)}
                 />
               </div>
             </div>
