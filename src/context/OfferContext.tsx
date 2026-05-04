@@ -1,9 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { findVariant } from "@/data/catalog";
 
+export type ClientType = "private" | "company" | "organization";
+
 export type ContactInfo = {
+  clientType: ClientType;
+  provider: string; // od kogo (nasza firma)
   fullName: string;
   company: string;
+  nip: string;
   email: string;
   phone: string;
   eventName: string;
@@ -23,7 +28,8 @@ export type SectionItem = {
 export type Section = {
   id: string;
   name: string;
-  time: string; // optional HH:MM
+  time: string; // godzina od HH:MM
+  endTime: string; // godzina do HH:MM
   guests: number;
   items: SectionItem[];
 };
@@ -41,8 +47,11 @@ export type OfferState = {
 };
 
 const EMPTY_CONTACT: ContactInfo = {
+  clientType: "company",
+  provider: "Jurek Catering Sp. z o.o.",
   fullName: "",
   company: "",
+  nip: "",
   email: "",
   phone: "",
   eventName: "",
@@ -65,8 +74,8 @@ type Ctx = {
   addDay: () => number;
   removeDay: (index: number) => void;
   setDayDate: (index: number, date: string) => void;
-  addSection: (dayIndex: number, name: string, guests: number, time?: string) => string;
-  renameSection: (sectionId: string, name: string, time?: string) => void;
+  addSection: (dayIndex: number, name: string, guests: number, time?: string, endTime?: string) => string;
+  renameSection: (sectionId: string, name: string, time?: string, endTime?: string) => void;
   updateSectionGuests: (sectionId: string, guests: number) => void;
   removeSection: (sectionId: string) => void;
   setActiveSection: (sectionId: string | null) => void;
@@ -152,12 +161,12 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const addSection = useCallback((dayIndex: number, name: string, guests: number, time?: string) => {
+  const addSection = useCallback((dayIndex: number, name: string, guests: number, time?: string, endTime?: string) => {
     const id = uid();
     setState((s) => {
       const days = s.days.map((d) =>
         d.index === dayIndex
-          ? { ...d, sections: [...d.sections, { id, name, time: time ?? "", guests, items: [] }] }
+          ? { ...d, sections: [...d.sections, { id, name, time: time ?? "", endTime: endTime ?? "", guests, items: [] }] }
           : d,
       );
       return { ...s, days, activeSectionId: id };
@@ -165,13 +174,13 @@ export function OfferProvider({ children }: { children: React.ReactNode }) {
     return id;
   }, []);
 
-  const renameSection = useCallback((sectionId: string, name: string, time?: string) => {
+  const renameSection = useCallback((sectionId: string, name: string, time?: string, endTime?: string) => {
     setState((s) => ({
       ...s,
       days: s.days.map((d) => ({
         ...d,
         sections: d.sections.map((sec) =>
-          sec.id === sectionId ? { ...sec, name, time: time ?? sec.time } : sec,
+          sec.id === sectionId ? { ...sec, name, time: time ?? sec.time, endTime: endTime ?? sec.endTime } : sec,
         ),
       })),
     }));
