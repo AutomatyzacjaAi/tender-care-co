@@ -1,13 +1,23 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Printer, Send, Pencil, FileCheck2 } from "lucide-react";
+import { Printer, Send, Pencil, FileCheck2, User2, Mail, Phone, Building2, FileText, CreditCard, Download, ArrowRight } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
-import { useOffer, type Section, type SectionItem } from "@/context/OfferContext";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useOffer, type Section, type SectionItem, type ClientType } from "@/context/OfferContext";
 import { findVariant, VAT_LABEL } from "@/data/catalog";
 import { PLN_DETAILED, formatDateLong, addDaysISO } from "@/lib/format";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+
+const PAYER_CLIENT_TYPES: { value: ClientType; label: string }[] = [
+  { value: "private", label: "Osoba prywatna" },
+  { value: "company", label: "Firma" },
+  { value: "organization", label: "Organizacja" },
+];
 
 export const Route = createFileRoute("/summary")({
   head: () => ({
@@ -41,15 +51,54 @@ function SummaryStep() {
     state.contact.startDate,
   );
 
+  const [payerOpen, setPayerOpen] = useState(false);
+  const [payer, setPayer] = useState({
+    clientType: state.contact.clientType as ClientType,
+    fullName: state.contact.fullName,
+    company: state.contact.company,
+    nip: state.contact.nip,
+    email: state.contact.email,
+    phone: state.contact.phone,
+    role: "",
+  });
+
   function sendInquiry() {
     toast.success("Wstępne zapotrzebowanie zostało wysłane.", {
       description: "Skontaktujemy się w ciągu 24 godzin, aby doprecyzować ofertę.",
     });
   }
 
-  function sendOrder() {
+  function openOrderFlow() {
+    setPayer((p) => ({
+      ...p,
+      clientType: state.contact.clientType,
+      fullName: p.fullName || state.contact.fullName,
+      company: p.company || state.contact.company,
+      nip: p.nip || state.contact.nip,
+      email: p.email || state.contact.email,
+      phone: p.phone || state.contact.phone,
+    }));
+    setPayerOpen(true);
+  }
+
+  const payerRequiresNip = payer.clientType === "company" || payer.clientType === "organization";
+  const payerValid =
+    payer.fullName.trim() &&
+    payer.email.trim() &&
+    (!payerRequiresNip || (payer.company.trim() && payer.nip.trim()));
+
+  function confirmAndSendOrder() {
+    setPayerOpen(false);
     toast.success("Zamówienie zostało wysłane.", {
-      description: "Otrzymasz potwierdzenie na adres e-mail wraz z fakturą pro forma.",
+      description: `Wiążące zamówienie wystawione na ${payer.company || payer.fullName}. Potwierdzenie i faktura pro forma trafią na ${payer.email}.`,
+    });
+  }
+
+  function downloadFinalOrder() {
+    setPayerOpen(false);
+    window.print();
+    toast.success("Generuję dokument zamówienia.", {
+      description: `Dane płatnika: ${payer.company || payer.fullName}.`,
     });
   }
 
@@ -311,12 +360,169 @@ function SummaryStep() {
               icon={<Send className="mr-2 h-4 w-4" />}
               label="Wyślij zamówienie"
               description="Wiążące zamówienie cateringu — otrzymasz potwierdzenie i fakturę pro forma."
-              onClick={sendOrder}
+              onClick={openOrderFlow}
               disabled={!hasItems}
             />
           </div>
         </div>
       </div>
+
+      {/* Payer details dialog — extra step before binding order */}
+      <Dialog open={payerOpen} onOpenChange={setPayerOpen}>
+        <DialogContent className="no-print max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">
+              Dane osoby odpowiedzialnej za płatność
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Uzupełnij dane płatnika — w dużych firmach zamówienie składa kto inny niż osoba
+              odpowiedzialna za rozliczenie. Na podstawie tych danych wygenerujemy wiążący
+              dokument zamówienia cateringowego, który zostanie wysłany do firmy cateringowej.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            <div>
+              <Label className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Typ płatnika
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {PAYER_CLIENT_TYPES.map((t) => {
+                  const active = payer.clientType === t.value;
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => setPayer({ ...payer, clientType: t.value })}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-sm transition-colors",
+                        active
+                          ? "border-accent bg-accent-soft text-accent"
+                          : "border-border bg-surface hover:bg-surface-sunken",
+                      )}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FieldRow icon={User2} label="Imię i nazwisko płatnika" htmlFor="payer-name">
+                <Input
+                  id="payer-name"
+                  value={payer.fullName}
+                  onChange={(e) => setPayer({ ...payer, fullName: e.target.value })}
+                  placeholder="Jan Kowalski"
+                />
+              </FieldRow>
+              <FieldRow icon={CreditCard} label="Stanowisko / rola (opcjonalnie)" htmlFor="payer-role">
+                <Input
+                  id="payer-role"
+                  value={payer.role}
+                  onChange={(e) => setPayer({ ...payer, role: e.target.value })}
+                  placeholder="np. Dyrektor finansowy"
+                />
+              </FieldRow>
+
+              {payerRequiresNip && (
+                <>
+                  <FieldRow icon={Building2} label={payer.clientType === "organization" ? "Nazwa organizacji" : "Nazwa firmy"} htmlFor="payer-company">
+                    <Input
+                      id="payer-company"
+                      value={payer.company}
+                      onChange={(e) => setPayer({ ...payer, company: e.target.value })}
+                      placeholder="Acme Sp. z o.o."
+                    />
+                  </FieldRow>
+                  <FieldRow icon={FileText} label="NIP płatnika" htmlFor="payer-nip">
+                    <Input
+                      id="payer-nip"
+                      value={payer.nip}
+                      onChange={(e) => setPayer({ ...payer, nip: e.target.value })}
+                      placeholder="123-456-78-90"
+                    />
+                  </FieldRow>
+                </>
+              )}
+
+              <FieldRow icon={Mail} label="E-mail do faktury" htmlFor="payer-email">
+                <Input
+                  id="payer-email"
+                  type="email"
+                  value={payer.email}
+                  onChange={(e) => setPayer({ ...payer, email: e.target.value })}
+                  placeholder="finanse@firma.pl"
+                />
+              </FieldRow>
+              <FieldRow icon={Phone} label="Telefon (opcjonalnie)" htmlFor="payer-phone">
+                <Input
+                  id="payer-phone"
+                  value={payer.phone}
+                  onChange={(e) => setPayer({ ...payer, phone: e.target.value })}
+                  placeholder="+48 600 000 000"
+                />
+              </FieldRow>
+            </div>
+
+            <div className="bg-surface-sunken border-border-soft rounded-lg border p-3 text-xs leading-relaxed text-muted-foreground">
+              Po zatwierdzeniu danych zostanie wygenerowany prawidłowy dokument zamówienia
+              z danymi do faktury. Możesz wysłać go bezpośrednio do firmy cateringowej
+              jako wiążące zamówienie lub pobrać gotowy dokument do własnej akceptacji
+              wewnętrznej.
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setPayerOpen(false)}>
+              Anuluj
+            </Button>
+            <Button
+              variant="outline"
+              onClick={downloadFinalOrder}
+              disabled={!payerValid}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Pobierz gotowe zamówienie
+            </Button>
+            <Button
+              onClick={confirmAndSendOrder}
+              disabled={!payerValid}
+              className="bg-accent text-accent-foreground hover:bg-accent-muted"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              Wyślij wiążące zamówienie
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function FieldRow({
+  icon: Icon,
+  label,
+  htmlFor,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  htmlFor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <Label
+        htmlFor={htmlFor}
+        className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
+      >
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </Label>
+      {children}
     </div>
   );
 }
