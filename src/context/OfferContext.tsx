@@ -99,7 +99,14 @@ function loadInitial(): OfferState {
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as OfferState;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<OfferState>;
+      return {
+        contact: { ...EMPTY_CONTACT, ...(parsed.contact ?? {}) },
+        days: parsed.days ?? [],
+        activeSectionId: parsed.activeSectionId ?? null,
+      };
+    }
   } catch {
     // ignore
   }
