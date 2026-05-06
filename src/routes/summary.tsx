@@ -51,15 +51,54 @@ function SummaryStep() {
     state.contact.startDate,
   );
 
+  const [payerOpen, setPayerOpen] = useState(false);
+  const [payer, setPayer] = useState({
+    clientType: state.contact.clientType as ClientType,
+    fullName: state.contact.fullName,
+    company: state.contact.company,
+    nip: state.contact.nip,
+    email: state.contact.email,
+    phone: state.contact.phone,
+    role: "",
+  });
+
   function sendInquiry() {
     toast.success("Wstępne zapotrzebowanie zostało wysłane.", {
       description: "Skontaktujemy się w ciągu 24 godzin, aby doprecyzować ofertę.",
     });
   }
 
-  function sendOrder() {
+  function openOrderFlow() {
+    setPayer((p) => ({
+      ...p,
+      clientType: state.contact.clientType,
+      fullName: p.fullName || state.contact.fullName,
+      company: p.company || state.contact.company,
+      nip: p.nip || state.contact.nip,
+      email: p.email || state.contact.email,
+      phone: p.phone || state.contact.phone,
+    }));
+    setPayerOpen(true);
+  }
+
+  const payerRequiresNip = payer.clientType === "company" || payer.clientType === "organization";
+  const payerValid =
+    payer.fullName.trim() &&
+    payer.email.trim() &&
+    (!payerRequiresNip || (payer.company.trim() && payer.nip.trim()));
+
+  function confirmAndSendOrder() {
+    setPayerOpen(false);
     toast.success("Zamówienie zostało wysłane.", {
-      description: "Otrzymasz potwierdzenie na adres e-mail wraz z fakturą pro forma.",
+      description: `Wiążące zamówienie wystawione na ${payer.company || payer.fullName}. Potwierdzenie i faktura pro forma trafią na ${payer.email}.`,
+    });
+  }
+
+  function downloadFinalOrder() {
+    setPayerOpen(false);
+    window.print();
+    toast.success("Generuję dokument zamówienia.", {
+      description: `Dane płatnika: ${payer.company || payer.fullName}.`,
     });
   }
 
