@@ -1,13 +1,23 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Printer, Send, Pencil, FileCheck2 } from "lucide-react";
+import { Printer, Send, Pencil, FileCheck2, User2, Mail, Phone, Building2, FileText, CreditCard, Download, ArrowRight } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
-import { useOffer, type Section, type SectionItem } from "@/context/OfferContext";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useOffer, type Section, type SectionItem, type ClientType } from "@/context/OfferContext";
 import { findVariant, VAT_LABEL } from "@/data/catalog";
 import { PLN_DETAILED, formatDateLong, addDaysISO } from "@/lib/format";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+
+const PAYER_CLIENT_TYPES: { value: ClientType; label: string }[] = [
+  { value: "private", label: "Osoba prywatna" },
+  { value: "company", label: "Firma" },
+  { value: "organization", label: "Organizacja" },
+];
 
 export const Route = createFileRoute("/summary")({
   head: () => ({
