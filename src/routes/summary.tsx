@@ -360,7 +360,7 @@ function SummaryStep() {
               icon={<Send className="mr-2 h-4 w-4" />}
               label="Wyślij zamówienie"
               description="Wiążące zamówienie cateringu — otrzymasz potwierdzenie i fakturę pro forma."
-              onClick={sendOrder}
+              onClick={openOrderFlow}
               disabled={!hasItems}
             />
           </div>
