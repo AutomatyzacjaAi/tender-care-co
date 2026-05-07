@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Check, ChevronDown, Plus, Trash2, Users } from "lucide-react";
+import { CalendarPlus, Check, ChevronDown, Plus, ShoppingCart, Trash2, Users } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -180,8 +180,9 @@ function ConfigureStep() {
             )}
             title="Zobacz wybory"
           >
-            <ChevronDown className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4" />
             <span className="hidden text-sm font-medium sm:inline">Zobacz wybory</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="border-border-soft hidden h-6 border-l sm:block" />
             <span className="text-left leading-tight">
               <span className="block text-[10px] text-muted-foreground">
