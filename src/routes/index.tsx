@@ -180,8 +180,9 @@ function ConfigureStep() {
             )}
             title="Zobacz wybory"
           >
-            <ChevronDown className="h-4 w-4" />
+            <ShoppingCart className="h-4 w-4" />
             <span className="hidden text-sm font-medium sm:inline">Zobacz wybory</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="border-border-soft hidden h-6 border-l sm:block" />
             <span className="text-left leading-tight">
               <span className="block text-[10px] text-muted-foreground">
