@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Check, ChevronDown, ChevronUp, Plus, Trash2, Users } from "lucide-react";
+import { CalendarPlus, Check, ChevronDown, Plus, Trash2, Users } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
