@@ -165,7 +165,36 @@ function ConfigureStep() {
 
   return (
     <div className="bg-surface min-h-screen pb-20">
-      <BrandHeader right={<Stepper />} />
+      <BrandHeader
+        center={<Stepper />}
+        right={
+          <button
+            type="button"
+            onClick={() => setSummaryOpen(true)}
+            disabled={!mounted || totalItemsCount === 0}
+            aria-label="Zobacz wybory"
+            className={cn(
+              "flex items-center gap-3 rounded-full border px-4 py-1.5 transition-colors",
+              "border-border-soft bg-surface text-foreground hover:bg-surface-sunken",
+              (!mounted || totalItemsCount === 0) && "cursor-not-allowed opacity-40",
+            )}
+            title="Zobacz wybory"
+          >
+            <ChevronDown className="h-4 w-4" />
+            <span className="hidden text-sm font-medium sm:inline">Zobacz wybory</span>
+            <span className="border-border-soft hidden h-6 border-l sm:block" />
+            <span className="text-left leading-tight">
+              <span className="block text-[10px] text-muted-foreground">
+                {mounted ? totalItemsCount : 0}{" "}
+                {(mounted ? totalItemsCount : 0) === 1 ? "pozycja" : "pozycji"}
+              </span>
+              <span className="font-serif text-base font-medium text-foreground">
+                {PLN.format(mounted ? totals.brutto : 0)}
+              </span>
+            </span>
+          </button>
+        }
+      />
 
       {/* TOP BAR — Days & Sections */}
       {mounted && (
