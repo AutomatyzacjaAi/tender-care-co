@@ -463,23 +463,12 @@ function ConfigureStep() {
                   Menu jest ustalone — klient nie wybiera pozycji indywidualnie.
                 </p>
               </div>
-              <DialogFooter className="border-border-soft flex-col gap-2 border-t bg-surface-sunken/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                {activeSection ? (
-                  <p className="text-xs text-muted-foreground">
-                    Trafi do <span className="text-foreground font-medium">{activeSection.section.name}</span>{" "}
-                    · {activeSection.section.guests} os.
-                  </p>
-                ) : (
-                  <p className="text-destructive text-xs">
-                    Brak aktywnej sekcji — utwórz ją na górze.
-                  </p>
-                )}
+              <DialogFooter className="border-border-soft flex-col gap-2 border-t bg-surface-sunken/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
                 <div className="flex gap-2">
                   <Button variant="ghost" onClick={() => setPreviewVariant(null)}>
                     Zamknij
                   </Button>
                   <Button
-                    disabled={!activeSection}
                     onClick={() => {
                       const v = previewVariant;
                       setPreviewVariant(null);
@@ -488,7 +477,7 @@ function ConfigureStep() {
                     className="bg-accent text-accent-foreground hover:bg-accent-muted"
                   >
                     <Plus className="mr-1 h-4 w-4" />
-                    Dodaj do sekcji
+                    Dodaj
                   </Button>
                 </div>
               </DialogFooter>
