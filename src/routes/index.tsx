@@ -353,7 +353,7 @@ function ConfigureStep() {
                         setPreviewMenu({ variant: activeVariant.variant, menuId: menu.id })
                       }
                       onAdd={() => handleAddVariant(activeVariant.variant, menu.id)}
-                      canAdd={mounted && !!activeSection}
+                      canAdd={mounted}
                     />
                   ))}
                 </div>
