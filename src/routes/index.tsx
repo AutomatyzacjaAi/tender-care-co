@@ -691,156 +691,62 @@ function ConfigureStep() {
   );
 }
 
-function SectionsTopBar({
-  onAddSection,
+function DaysBar({
   onAddDay,
   onRemoveDay,
   onDateChange,
-  activeSectionId,
-  onSelect,
-  onRemove,
-  onGuestsChange,
 }: {
-  onAddSection: (dayIndex: number) => void;
   onAddDay: () => void;
   onRemoveDay: (dayIndex: number) => void;
   onDateChange: (dayIndex: number, date: string) => void;
-  activeSectionId: string | null;
-  onSelect: (id: string) => void;
-  onRemove: (id: string) => void;
-  onGuestsChange: (id: string, guests: number) => void;
 }) {
   const { state } = useOffer();
 
   return (
     <div className="bg-surface-elevated/80 border-border-soft sticky top-16 z-30 border-b backdrop-blur">
-      <div className="mx-auto w-full max-w-[1400px] px-4 py-4 sm:px-6">
-        <div className="mb-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-3 sm:px-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-muted-foreground mr-2 text-xs uppercase tracking-[0.18em]">
             Plan wydarzenia
           </p>
-        </div>
-        <p className="text-muted-foreground mb-3 w-full text-xs leading-relaxed sm:text-[13px]">
-          Najpierw dodaj dzień i wybierz datę, a następnie dodawaj kategorie do tego dnia (np. <span className="text-foreground font-medium">Przerwa kawowa, 11:00</span>, Lunch, Kolacja). Do jednego dnia możesz dodać wiele kategorii.
-        </p>
-        <div className="-mx-4 flex flex-col gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
           {state.days.map((d) => (
-            <div key={d.index} className="flex flex-wrap items-center gap-2">
-              <div className="flex shrink-0 items-center gap-2 pr-2">
-                <span className="text-muted-foreground inline-flex h-7 items-center font-mono text-[10px] uppercase tracking-widest">
-                  Dzień {d.index}
-                </span>
-                <input
-                  type="date"
-                  value={d.date ?? ""}
-                  onChange={(e) => onDateChange(d.index, e.target.value)}
-                  className={cn(
-                    "h-7 rounded-full border px-2.5 text-xs font-medium tabular-nums transition-colors",
-                    d.date
-                      ? "border-accent/40 bg-accent-soft text-accent"
-                      : "border-dashed border-border bg-surface-sunken text-muted-foreground hover:border-accent/40",
-                  )}
-                  aria-label={`Data dla Dnia ${d.index}`}
-                />
-                {state.days.length > 1 && (
-                  <button
-                    onClick={() => onRemoveDay(d.index)}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label={`Usuń Dzień ${d.index}`}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+            <div
+              key={d.index}
+              className="border-border bg-surface flex shrink-0 items-center gap-2 rounded-full border px-3 py-1"
+            >
+              <span className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest">
+                Dzień {d.index}
+              </span>
+              <input
+                type="date"
+                value={d.date ?? ""}
+                onChange={(e) => onDateChange(d.index, e.target.value)}
+                className={cn(
+                  "h-6 rounded-full border px-2 text-xs font-medium tabular-nums transition-colors",
+                  d.date
+                    ? "border-accent/40 bg-accent-soft text-accent"
+                    : "border-dashed border-border bg-surface-sunken text-muted-foreground hover:border-accent/40",
                 )}
-              </div>
-              {d.sections.map((sec) => {
-                const isActive = sec.id === activeSectionId;
-                return (
-                  <div
-                    key={sec.id}
-                    className={cn(
-                      "group flex shrink-0 items-stretch overflow-hidden rounded-full border transition-colors",
-                      isActive
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-border bg-surface text-foreground hover:border-accent/50",
-                    )}
-                  >
-                    <button
-                      onClick={() => onSelect(sec.id)}
-                      className="flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-xs font-medium"
-                    >
-                      {isActive && <Check className="h-3 w-3" />}
-                      <span>{sec.name}</span>
-                      {(sec.time || sec.endTime) && (
-                        <span
-                          className={cn(
-                            "text-[10px]",
-                            isActive ? "text-accent-foreground/80" : "text-muted-foreground",
-                          )}
-                        >
-                          {sec.time || "—"}
-                          {sec.endTime && `–${sec.endTime}`}
-                        </span>
-                      )}
-                    </button>
-                    <div
-                      className={cn(
-                        "flex items-center gap-0.5 border-l px-1.5",
-                        isActive ? "border-accent-foreground/20" : "border-border",
-                      )}
-                    >
-                      <Users
-                        className={cn(
-                          "h-3 w-3",
-                          isActive ? "text-accent-foreground/80" : "text-muted-foreground",
-                        )}
-                      />
-                      <input
-                        type="number"
-                        min={1}
-                        value={sec.guests}
-                        onChange={(e) => onGuestsChange(sec.id, Number(e.target.value) || 1)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          "w-10 bg-transparent text-center text-xs tabular-nums focus:outline-none",
-                          isActive ? "text-accent-foreground" : "text-foreground",
-                        )}
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Usunąć sekcję "${sec.name}"?`)) onRemove(sec.id);
-                      }}
-                      className={cn(
-                        "border-l px-2 transition-colors",
-                        isActive
-                          ? "border-accent-foreground/20 text-accent-foreground/70 hover:text-accent-foreground"
-                          : "border-border text-muted-foreground hover:text-destructive",
-                      )}
-                      aria-label="Usuń sekcję"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-              <button
-                onClick={() => onAddSection(d.index)}
-                className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex shrink-0 items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors"
-              >
-                <Plus className="h-3 w-3" />
-                dodaj kategorię
-              </button>
+                aria-label={`Data dla Dnia ${d.index}`}
+              />
+              {state.days.length > 1 && (
+                <button
+                  onClick={() => onRemoveDay(d.index)}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Usuń Dzień ${d.index}`}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
             </div>
           ))}
-          <div className="flex">
-            <button
-              onClick={onAddDay}
-              className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-xs font-medium transition-colors"
-            >
-              <CalendarPlus className="h-3 w-3" />
-              dodaj dzień
-            </button>
-          </div>
+          <button
+            onClick={onAddDay}
+            className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-xs font-medium transition-colors"
+          >
+            <CalendarPlus className="h-3 w-3" />
+            dodaj dzień
+          </button>
         </div>
       </div>
     </div>
