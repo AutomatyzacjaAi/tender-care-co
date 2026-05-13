@@ -382,7 +382,7 @@ function ConfigureStep() {
                   <VariantCard
                     key={variant.id}
                     variant={variant}
-                    onPreview={() => setPreviewVariant(variant)}
+                    onPreview={() => handleAddVariant(variant)}
                     onAdd={() => handleAddVariant(variant)}
                     canAdd={mounted}
                   />
