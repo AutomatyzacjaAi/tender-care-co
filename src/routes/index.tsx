@@ -347,9 +347,7 @@ function ConfigureStep() {
                       key={menu.id}
                       variant={activeVariant.variant}
                       menu={menu}
-                      onPreview={() =>
-                        setPreviewMenu({ variant: activeVariant.variant, menuId: menu.id })
-                      }
+                      onPreview={() => handleAddVariant(activeVariant.variant, menu.id)}
                       onAdd={() => handleAddVariant(activeVariant.variant, menu.id)}
                       canAdd={mounted}
                     />
