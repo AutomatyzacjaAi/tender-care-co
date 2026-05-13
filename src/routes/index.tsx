@@ -170,10 +170,9 @@ function ConfigureStep() {
         }
       />
 
-      {/* TOP BAR — Days & Sections */}
+      {/* TOP BAR — Days */}
       {mounted && (
-        <SectionsTopBar
-          onAddSection={openNewSection}
+        <DaysBar
           onAddDay={() => {
             const idx = addDay();
             toast.success(`Dodano Dzień ${idx}`);
@@ -183,15 +182,11 @@ function ConfigureStep() {
               toast.error("Musi pozostać co najmniej jeden dzień.");
               return;
             }
-            if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
+            if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi pozycjami?`)) {
               removeDay(idx);
             }
           }}
           onDateChange={setDayDate}
-          activeSectionId={activeSectionId}
-          onSelect={(id) => setActiveSection(id)}
-          onRemove={removeSection}
-          onGuestsChange={updateSectionGuests}
         />
       )}
 
