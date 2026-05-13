@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, Check, ChevronDown, Plus, ShoppingCart, Trash2, Users } from "lucide-react";
+import { CalendarPlus, ChevronDown, Clock, Plus, ShoppingCart, Trash2, Users } from "lucide-react";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Stepper } from "@/components/Stepper";
 import { Button } from "@/components/ui/button";
@@ -51,11 +51,9 @@ function ConfigureStep() {
     removeDay,
     setDayDate,
     addSection,
-    removeSection,
-    updateSectionGuests,
-    setActiveSection,
     addItem,
     removeItem,
+    removeSection,
     totals,
   } = useOffer();
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -66,7 +64,6 @@ function ConfigureStep() {
     [activeCategoryId],
   );
   const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
-  // Sidebar tree state (e-commerce style) — pilot: Przerwa kawowa
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>("coffee-break");
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
   const [previewMenu, setPreviewMenu] = useState<{ variant: Variant; menuId: string } | null>(null);
@@ -80,16 +77,14 @@ function ConfigureStep() {
     return null;
   }, [activeVariantId]);
 
-  // New section dialog
-  const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
-  const [newSectionName, setNewSectionName] = useState("");
-  const [newSectionTime, setNewSectionTime] = useState("");
-  const [newSectionEndTime, setNewSectionEndTime] = useState("");
-  const [newSectionGuests, setNewSectionGuests] = useState<number>(
-    state.contact.defaultGuests || 100,
-  );
+  // Add-to-day dialog (zastępuje wcześniejsze tworzenie sekcji)
+  const [pendingAdd, setPendingAdd] = useState<{ variant: Variant; menuId?: string } | null>(null);
+  const [addDayIndex, setAddDayIndex] = useState<number>(1);
+  const [addGuests, setAddGuests] = useState<number>(state.contact.defaultGuests || 100);
+  const [addTime, setAddTime] = useState<string>("");
+  const [addEndTime, setAddEndTime] = useState<string>("");
 
-  // Avoid SSR/CSR mismatch — days/sections come from localStorage
+  // Avoid SSR/CSR mismatch — days come from localStorage
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -104,60 +99,38 @@ function ConfigureStep() {
     }
   }, [mounted, state.contact.fullName, state.contact.email, navigate]);
 
-  const activeSectionId = state.activeSectionId;
-  const activeSection = useMemo(() => {
-    for (const d of state.days) {
-      const sec = d.sections.find((s) => s.id === activeSectionId);
-      if (sec) return { section: sec, dayIndex: d.index };
-    }
-    return null;
-  }, [state.days, activeSectionId]);
-
-  // Auto-select first section if none active
-  useEffect(() => {
-    if (!activeSectionId) {
-      const first = state.days.flatMap((d) => d.sections)[0];
-      if (first) setActiveSection(first.id);
-    }
-  }, [activeSectionId, state.days, setActiveSection]);
-
-  function openNewSection(dayIndex: number) {
-    setNewSectionFor(dayIndex);
-    setNewSectionName("");
-    setNewSectionTime("");
-    setNewSectionEndTime("");
-    setNewSectionGuests(state.contact.defaultGuests || 100);
+  function openAdd(variant: Variant, menuId?: string) {
+    setPendingAdd({ variant, menuId });
+    const firstDay = state.days[0]?.index ?? 1;
+    setAddDayIndex(firstDay);
+    setAddGuests(state.contact.defaultGuests || 100);
+    setAddTime("");
+    setAddEndTime("");
   }
 
-  function commitNewSection() {
-    if (newSectionFor === null) return;
-    const name = newSectionName.trim();
-    if (!name) return;
-    addSection(
-      newSectionFor,
-      name,
-      newSectionGuests,
-      newSectionTime || undefined,
-      newSectionEndTime || undefined,
-    );
-    toast.success(`Sekcja "${name}" utworzona — wybierz teraz menu.`);
-    setNewSectionFor(null);
-    setNewSectionName("");
-    setNewSectionTime("");
-    setNewSectionEndTime("");
+  function commitAdd() {
+    if (!pendingAdd) return;
+    if (!addTime || !addEndTime) {
+      toast.error("Uzupełnij godziny rozpoczęcia i zakończenia.");
+      return;
+    }
+    if (addGuests < 1) {
+      toast.error("Liczba osób musi być większa od 0.");
+      return;
+    }
+    const { variant, menuId } = pendingAdd;
+    const menuName = menuId ? variant.menus.find((m) => m.id === menuId)?.name : undefined;
+    const sectionName = menuName ? `${variant.name} · ${menuName}` : variant.name;
+    const sectionId = addSection(addDayIndex, sectionName, addGuests, addTime, addEndTime);
+    addItem(sectionId, variant.id, menuId, addGuests);
+    toast.success(`Dodano: ${sectionName} → Dzień ${addDayIndex}`);
+    setPendingAdd(null);
   }
 
   function handleAddVariant(variant: Variant, menuId?: string) {
-    if (!activeSectionId) {
-      toast.error("Najpierw utwórz lub wybierz sekcję na górze strony.");
-      return;
-    }
-    addItem(activeSectionId, variant.id, menuId);
-    const menuName = menuId ? variant.menus.find((m) => m.id === menuId)?.name : undefined;
-    toast.success(`Dodano: ${variant.name}${menuName ? ` · ${menuName}` : ""}`);
+    openAdd(variant, menuId);
   }
 
-  const totalSectionsCount = state.days.reduce((acc, d) => acc + d.sections.length, 0);
   const totalItemsCount = state.days.reduce(
     (acc, d) => acc + d.sections.reduce((a, s) => a + s.items.length, 0),
     0,
@@ -197,10 +170,9 @@ function ConfigureStep() {
         }
       />
 
-      {/* TOP BAR — Days & Sections */}
+      {/* TOP BAR — Days */}
       {mounted && (
-        <SectionsTopBar
-          onAddSection={openNewSection}
+        <DaysBar
           onAddDay={() => {
             const idx = addDay();
             toast.success(`Dodano Dzień ${idx}`);
@@ -210,15 +182,11 @@ function ConfigureStep() {
               toast.error("Musi pozostać co najmniej jeden dzień.");
               return;
             }
-            if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi sekcjami?`)) {
+            if (confirm(`Usunąć Dzień ${idx} wraz z wszystkimi pozycjami?`)) {
               removeDay(idx);
             }
           }}
           onDateChange={setDayDate}
-          activeSectionId={activeSectionId}
-          onSelect={(id) => setActiveSection(id)}
-          onRemove={removeSection}
-          onGuestsChange={updateSectionGuests}
         />
       )}
 
@@ -337,33 +305,10 @@ function ConfigureStep() {
 
         {/* MIDDLE — Variants */}
         <section>
-          {/* Active section context strip */}
-          {mounted && activeSection ? (
-            <div className="border-accent/30 bg-accent-soft/60 mb-5 flex flex-col gap-1 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Wybierasz menu dla
-                </p>
-                <p className="text-accent font-serif text-lg font-medium">
-                  {activeSection.section.name}
-                  {(activeSection.section.time || activeSection.section.endTime) && (
-                    <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      · {activeSection.section.time || "—"}
-                      {activeSection.section.endTime && ` – ${activeSection.section.endTime}`}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>{activeSection.section.guests} os.</span>
-                <span className="text-border mx-1">·</span>
-                <span>Dzień {activeSection.dayIndex}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="border-border bg-surface-sunken/60 mb-5 rounded-xl border border-dashed px-4 py-4 text-sm text-muted-foreground">
-              Najpierw utwórz sekcję na górze strony — np. „Lunch, 13:00, 80 os.” — a potem dodawaj do niej pozycje z menu.
+          {/* Hint */}
+          {mounted && state.days.length > 0 && (
+            <div className="border-border bg-surface-sunken/40 mb-5 rounded-xl border border-dashed px-4 py-3 text-xs text-muted-foreground sm:text-[13px]">
+              Wybierz pozycję z menu i kliknij <span className="text-foreground font-medium">Dodaj</span> — w okienku ustalisz godziny, liczbę osób i dzień, do którego ma trafić.
             </div>
           )}
 
@@ -408,7 +353,7 @@ function ConfigureStep() {
                         setPreviewMenu({ variant: activeVariant.variant, menuId: menu.id })
                       }
                       onAdd={() => handleAddVariant(activeVariant.variant, menu.id)}
-                      canAdd={mounted && !!activeSection}
+                      canAdd={mounted}
                     />
                   ))}
                 </div>
@@ -443,7 +388,7 @@ function ConfigureStep() {
                     variant={variant}
                     onPreview={() => setPreviewVariant(variant)}
                     onAdd={() => handleAddVariant(variant)}
-                    canAdd={mounted && !!activeSection}
+                    canAdd={mounted}
                   />
                 ))}
               </div>
@@ -518,23 +463,12 @@ function ConfigureStep() {
                   Menu jest ustalone — klient nie wybiera pozycji indywidualnie.
                 </p>
               </div>
-              <DialogFooter className="border-border-soft flex-col gap-2 border-t bg-surface-sunken/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                {activeSection ? (
-                  <p className="text-xs text-muted-foreground">
-                    Trafi do <span className="text-foreground font-medium">{activeSection.section.name}</span>{" "}
-                    · {activeSection.section.guests} os.
-                  </p>
-                ) : (
-                  <p className="text-destructive text-xs">
-                    Brak aktywnej sekcji — utwórz ją na górze.
-                  </p>
-                )}
+              <DialogFooter className="border-border-soft flex-col gap-2 border-t bg-surface-sunken/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
                 <div className="flex gap-2">
                   <Button variant="ghost" onClick={() => setPreviewVariant(null)}>
                     Zamknij
                   </Button>
                   <Button
-                    disabled={!activeSection}
                     onClick={() => {
                       const v = previewVariant;
                       setPreviewVariant(null);
@@ -543,7 +477,7 @@ function ConfigureStep() {
                     className="bg-accent text-accent-foreground hover:bg-accent-muted"
                   >
                     <Plus className="mr-1 h-4 w-4" />
-                    Dodaj do sekcji
+                    Dodaj
                   </Button>
                 </div>
               </DialogFooter>
@@ -552,80 +486,90 @@ function ConfigureStep() {
         </DialogContent>
       </Dialog>
 
-      {/* New section dialog */}
-      <Dialog open={!!newSectionFor} onOpenChange={(o) => !o && setNewSectionFor(null)}>
+      {/* Add-to-day dialog — wymusza godziny i osoby przy dodawaniu pozycji */}
+      <Dialog open={!!pendingAdd} onOpenChange={(o) => !o && setPendingAdd(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Nowa sekcja — Dzień {newSectionFor}
+            <DialogTitle className="font-serif">
+              Dodaj: {pendingAdd?.variant.name}
+              {pendingAdd?.menuId && (
+                <span className="text-muted-foreground text-sm font-normal">
+                  {" · "}
+                  {pendingAdd.variant.menus.find((m) => m.id === pendingAdd.menuId)?.name}
+                </span>
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="secName" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Nazwa kategorii
-              </Label>
-              <Input
-                id="secName"
-                placeholder="np. Przerwa kawowa, Lunch, Kolacja"
-                value={newSectionName}
-                onChange={(e) => setNewSectionName(e.target.value)}
-                autoFocus
-              />
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="secTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Od
+                <Label htmlFor="addTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Od *
                 </Label>
                 <Input
-                  id="secTime"
+                  id="addTime"
                   type="time"
-                  value={newSectionTime}
-                  onChange={(e) => setNewSectionTime(e.target.value)}
+                  value={addTime}
+                  onChange={(e) => setAddTime(e.target.value)}
+                  autoFocus
                 />
               </div>
               <div>
-                <Label htmlFor="secEndTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Do
+                <Label htmlFor="addEndTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Do *
                 </Label>
                 <Input
-                  id="secEndTime"
+                  id="addEndTime"
                   type="time"
-                  value={newSectionEndTime}
-                  onChange={(e) => setNewSectionEndTime(e.target.value)}
+                  value={addEndTime}
+                  onChange={(e) => setAddEndTime(e.target.value)}
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="secGuests" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Liczba osób
+              <Label htmlFor="addGuests" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                <Users className="h-3 w-3" /> Liczba osób *
               </Label>
               <Input
-                id="secGuests"
+                id="addGuests"
                 type="number"
                 min={1}
-                value={newSectionGuests}
-                onChange={(e) => setNewSectionGuests(Math.max(1, Number(e.target.value) || 1))}
+                value={addGuests}
+                onChange={(e) => setAddGuests(Math.max(1, Number(e.target.value) || 1))}
               />
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                Tyle porcji policzymy z każdej pozycji menu dodanej do tej sekcji.
-              </p>
             </div>
+            {state.days.length > 1 && (
+              <div>
+                <Label htmlFor="addDay" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Dzień
+                </Label>
+                <select
+                  id="addDay"
+                  value={addDayIndex}
+                  onChange={(e) => setAddDayIndex(Number(e.target.value))}
+                  className="border-input bg-surface h-10 w-full rounded-md border px-3 text-sm"
+                >
+                  {state.days.map((d) => (
+                    <option key={d.index} value={d.index}>
+                      Dzień {d.index}
+                      {d.date ? ` · ${formatDateShort(d.date)}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setNewSectionFor(null)}
-            >
-              Anuluj
+            <Button variant="ghost" onClick={() => setPendingAdd(null)}>
+              Zamknij
             </Button>
             <Button
-              disabled={!newSectionName.trim() || newSectionGuests < 1}
-              onClick={commitNewSection}
+              disabled={!addTime || !addEndTime || addGuests < 1}
+              onClick={commitAdd}
               className="bg-accent text-accent-foreground hover:bg-accent-muted"
             >
-              Utwórz sekcję
+              <Plus className="mr-1 h-4 w-4" />
+              Dodaj do Dnia {addDayIndex}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -747,156 +691,62 @@ function ConfigureStep() {
   );
 }
 
-function SectionsTopBar({
-  onAddSection,
+function DaysBar({
   onAddDay,
   onRemoveDay,
   onDateChange,
-  activeSectionId,
-  onSelect,
-  onRemove,
-  onGuestsChange,
 }: {
-  onAddSection: (dayIndex: number) => void;
   onAddDay: () => void;
   onRemoveDay: (dayIndex: number) => void;
   onDateChange: (dayIndex: number, date: string) => void;
-  activeSectionId: string | null;
-  onSelect: (id: string) => void;
-  onRemove: (id: string) => void;
-  onGuestsChange: (id: string, guests: number) => void;
 }) {
   const { state } = useOffer();
 
   return (
     <div className="bg-surface-elevated/80 border-border-soft sticky top-16 z-30 border-b backdrop-blur">
-      <div className="mx-auto w-full max-w-[1400px] px-4 py-4 sm:px-6">
-        <div className="mb-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-3 sm:px-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-muted-foreground mr-2 text-xs uppercase tracking-[0.18em]">
             Plan wydarzenia
           </p>
-        </div>
-        <p className="text-muted-foreground mb-3 w-full text-xs leading-relaxed sm:text-[13px]">
-          Najpierw dodaj dzień i wybierz datę, a następnie dodawaj kategorie do tego dnia (np. <span className="text-foreground font-medium">Przerwa kawowa, 11:00</span>, Lunch, Kolacja). Do jednego dnia możesz dodać wiele kategorii.
-        </p>
-        <div className="-mx-4 flex flex-col gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
           {state.days.map((d) => (
-            <div key={d.index} className="flex flex-wrap items-center gap-2">
-              <div className="flex shrink-0 items-center gap-2 pr-2">
-                <span className="text-muted-foreground inline-flex h-7 items-center font-mono text-[10px] uppercase tracking-widest">
-                  Dzień {d.index}
-                </span>
-                <input
-                  type="date"
-                  value={d.date ?? ""}
-                  onChange={(e) => onDateChange(d.index, e.target.value)}
-                  className={cn(
-                    "h-7 rounded-full border px-2.5 text-xs font-medium tabular-nums transition-colors",
-                    d.date
-                      ? "border-accent/40 bg-accent-soft text-accent"
-                      : "border-dashed border-border bg-surface-sunken text-muted-foreground hover:border-accent/40",
-                  )}
-                  aria-label={`Data dla Dnia ${d.index}`}
-                />
-                {state.days.length > 1 && (
-                  <button
-                    onClick={() => onRemoveDay(d.index)}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label={`Usuń Dzień ${d.index}`}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+            <div
+              key={d.index}
+              className="border-border bg-surface flex shrink-0 items-center gap-2 rounded-full border px-3 py-1"
+            >
+              <span className="text-muted-foreground font-mono text-[10px] uppercase tracking-widest">
+                Dzień {d.index}
+              </span>
+              <input
+                type="date"
+                value={d.date ?? ""}
+                onChange={(e) => onDateChange(d.index, e.target.value)}
+                className={cn(
+                  "h-6 rounded-full border px-2 text-xs font-medium tabular-nums transition-colors",
+                  d.date
+                    ? "border-accent/40 bg-accent-soft text-accent"
+                    : "border-dashed border-border bg-surface-sunken text-muted-foreground hover:border-accent/40",
                 )}
-              </div>
-              {d.sections.map((sec) => {
-                const isActive = sec.id === activeSectionId;
-                return (
-                  <div
-                    key={sec.id}
-                    className={cn(
-                      "group flex shrink-0 items-stretch overflow-hidden rounded-full border transition-colors",
-                      isActive
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-border bg-surface text-foreground hover:border-accent/50",
-                    )}
-                  >
-                    <button
-                      onClick={() => onSelect(sec.id)}
-                      className="flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-xs font-medium"
-                    >
-                      {isActive && <Check className="h-3 w-3" />}
-                      <span>{sec.name}</span>
-                      {(sec.time || sec.endTime) && (
-                        <span
-                          className={cn(
-                            "text-[10px]",
-                            isActive ? "text-accent-foreground/80" : "text-muted-foreground",
-                          )}
-                        >
-                          {sec.time || "—"}
-                          {sec.endTime && `–${sec.endTime}`}
-                        </span>
-                      )}
-                    </button>
-                    <div
-                      className={cn(
-                        "flex items-center gap-0.5 border-l px-1.5",
-                        isActive ? "border-accent-foreground/20" : "border-border",
-                      )}
-                    >
-                      <Users
-                        className={cn(
-                          "h-3 w-3",
-                          isActive ? "text-accent-foreground/80" : "text-muted-foreground",
-                        )}
-                      />
-                      <input
-                        type="number"
-                        min={1}
-                        value={sec.guests}
-                        onChange={(e) => onGuestsChange(sec.id, Number(e.target.value) || 1)}
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          "w-10 bg-transparent text-center text-xs tabular-nums focus:outline-none",
-                          isActive ? "text-accent-foreground" : "text-foreground",
-                        )}
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Usunąć sekcję "${sec.name}"?`)) onRemove(sec.id);
-                      }}
-                      className={cn(
-                        "border-l px-2 transition-colors",
-                        isActive
-                          ? "border-accent-foreground/20 text-accent-foreground/70 hover:text-accent-foreground"
-                          : "border-border text-muted-foreground hover:text-destructive",
-                      )}
-                      aria-label="Usuń sekcję"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-              <button
-                onClick={() => onAddSection(d.index)}
-                className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex shrink-0 items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs font-medium transition-colors"
-              >
-                <Plus className="h-3 w-3" />
-                dodaj kategorię
-              </button>
+                aria-label={`Data dla Dnia ${d.index}`}
+              />
+              {state.days.length > 1 && (
+                <button
+                  onClick={() => onRemoveDay(d.index)}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Usuń Dzień ${d.index}`}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
             </div>
           ))}
-          <div className="flex">
-            <button
-              onClick={onAddDay}
-              className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-xs font-medium transition-colors"
-            >
-              <CalendarPlus className="h-3 w-3" />
-              dodaj dzień
-            </button>
-          </div>
+          <button
+            onClick={onAddDay}
+            className="border-accent/40 text-accent hover:bg-accent hover:text-accent-foreground flex items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-xs font-medium transition-colors"
+          >
+            <CalendarPlus className="h-3 w-3" />
+            dodaj dzień
+          </button>
         </div>
       </div>
     </div>
