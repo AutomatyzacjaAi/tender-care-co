@@ -407,167 +407,149 @@ function ConfigureStep() {
         </div>
       </div>
 
-      {/* Variant menu preview dialog */}
-      <Dialog open={!!previewVariant} onOpenChange={(o) => !o && setPreviewVariant(null)}>
+      {/* Unified preview + add-to-day dialog */}
+      <Dialog open={!!pendingAdd} onOpenChange={(o) => !o && setPendingAdd(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-2xl">
-          {previewVariant && (
-            <>
-              <div className="relative aspect-[16/7] w-full overflow-hidden bg-muted">
-                <img
-                  src={previewVariant.image}
-                  alt={previewVariant.name}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="px-6 pb-2 pt-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  {activeCategory.name}
-                </p>
-                <DialogHeader className="mt-1 space-y-1 text-left">
-                  <DialogTitle className="font-serif text-2xl font-medium">
-                    {previewVariant.name}
-                  </DialogTitle>
-                </DialogHeader>
-                <p className="mt-2 text-sm text-muted-foreground">{previewVariant.tagline}</p>
-                <div className="border-border-soft mt-4 flex items-baseline justify-between border-t pt-4">
-                  <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                    Cena
-                  </span>
-                  <div className="text-right">
-                    <span className="font-serif text-2xl font-medium text-foreground">
-                      {PLN.format(previewVariant.pricePerGuest)}
+          {pendingAdd && (() => {
+            const variant = pendingAdd.variant;
+            const menu = pendingAdd.menuId
+              ? variant.menus.find((m) => m.id === pendingAdd.menuId)
+              : variant.menus[0];
+            return (
+              <>
+                <div className="relative aspect-[16/7] w-full overflow-hidden bg-muted">
+                  <img
+                    src={variant.image}
+                    alt={variant.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="px-6 pb-2 pt-5">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    {activeCategory.name}
+                  </p>
+                  <DialogHeader className="mt-1 space-y-1 text-left">
+                    <DialogTitle className="font-serif text-2xl font-medium">
+                      {variant.name}
+                      {pendingAdd.menuId && menu && (
+                        <span className="text-muted-foreground text-base font-normal">
+                          {" · "}
+                          {menu.name}
+                        </span>
+                      )}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <p className="mt-2 text-sm text-muted-foreground">{variant.tagline}</p>
+                  <div className="border-border-soft mt-4 flex items-baseline justify-between border-t pt-4">
+                    <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                      Cena
                     </span>
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      {previewVariant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt"}
-                    </span>
+                    <div className="text-right">
+                      <span className="font-serif text-2xl font-medium text-foreground">
+                        {PLN.format(variant.pricePerGuest)}
+                      </span>
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        {variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="px-6 py-4">
-                <p className="mb-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Menu — pełny zestaw
-                </p>
-                <ul className="bg-surface-sunken/60 space-y-2 rounded-lg p-4 text-sm text-foreground">
-                  {(previewVariant.menus[0]?.items ?? []).map((item, i) => (
-                    <li key={i} className="flex gap-2.5">
-                      <span className="text-accent mt-0.5">·</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-3 text-[11px] text-muted-foreground">
-                  Menu jest ustalone — klient nie wybiera pozycji indywidualnie.
-                </p>
-              </div>
-              <DialogFooter className="border-border-soft flex-col gap-2 border-t bg-surface-sunken/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
-                <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setPreviewVariant(null)}>
+                <div className="px-6 py-4">
+                  <p className="mb-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    Menu — pełny zestaw
+                  </p>
+                  <ul className="bg-surface-sunken/60 space-y-2 rounded-lg p-4 text-sm text-foreground">
+                    {(menu?.items ?? []).map((item, i) => (
+                      <li key={i} className="flex gap-2.5">
+                        <span className="text-accent mt-0.5">·</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 text-[11px] text-muted-foreground">
+                    Menu jest ustalone — klient nie wybiera pozycji indywidualnie.
+                  </p>
+                </div>
+                <div className="border-border-soft border-t bg-surface-sunken/40 px-6 py-4">
+                  <p className="mb-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    Szczegóły dodania
+                  </p>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="addTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                          <Clock className="h-3 w-3" /> Od *
+                        </Label>
+                        <Input
+                          id="addTime"
+                          type="time"
+                          value={addTime}
+                          onChange={(e) => setAddTime(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="addEndTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                          <Clock className="h-3 w-3" /> Do *
+                        </Label>
+                        <Input
+                          id="addEndTime"
+                          type="time"
+                          value={addEndTime}
+                          onChange={(e) => setAddEndTime(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="addGuests" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                        <Users className="h-3 w-3" /> Liczba osób *
+                      </Label>
+                      <Input
+                        id="addGuests"
+                        type="number"
+                        min={1}
+                        value={addGuests}
+                        onChange={(e) => setAddGuests(Math.max(1, Number(e.target.value) || 1))}
+                      />
+                    </div>
+                    {state.days.length > 1 && (
+                      <div>
+                        <Label htmlFor="addDay" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                          Dzień
+                        </Label>
+                        <select
+                          id="addDay"
+                          value={addDayIndex}
+                          onChange={(e) => setAddDayIndex(Number(e.target.value))}
+                          className="border-input bg-surface h-10 w-full rounded-md border px-3 text-sm"
+                        >
+                          {state.days.map((d) => (
+                            <option key={d.index} value={d.index}>
+                              Dzień {d.index}
+                              {d.date ? ` · ${formatDateShort(d.date)}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter className="border-border-soft flex-col gap-2 border-t bg-surface-sunken/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
+                  <Button variant="ghost" onClick={() => setPendingAdd(null)}>
                     Zamknij
                   </Button>
                   <Button
-                    onClick={() => {
-                      const v = previewVariant;
-                      setPreviewVariant(null);
-                      handleAddVariant(v);
-                    }}
+                    disabled={!addTime || !addEndTime || addGuests < 1}
+                    onClick={commitAdd}
                     className="bg-accent text-accent-foreground hover:bg-accent-muted"
                   >
                     <Plus className="mr-1 h-4 w-4" />
-                    Dodaj
+                    Dodaj do Dnia {addDayIndex}
                   </Button>
-                </div>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Add-to-day dialog — wymusza godziny i osoby przy dodawaniu pozycji */}
-      <Dialog open={!!pendingAdd} onOpenChange={(o) => !o && setPendingAdd(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-serif">
-              Dodaj: {pendingAdd?.variant.name}
-              {pendingAdd?.menuId && (
-                <span className="text-muted-foreground text-sm font-normal">
-                  {" · "}
-                  {pendingAdd.variant.menus.find((m) => m.id === pendingAdd.menuId)?.name}
-                </span>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="addTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  <Clock className="h-3 w-3" /> Od *
-                </Label>
-                <Input
-                  id="addTime"
-                  type="time"
-                  value={addTime}
-                  onChange={(e) => setAddTime(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div>
-                <Label htmlFor="addEndTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  <Clock className="h-3 w-3" /> Do *
-                </Label>
-                <Input
-                  id="addEndTime"
-                  type="time"
-                  value={addEndTime}
-                  onChange={(e) => setAddEndTime(e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="addGuests" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                <Users className="h-3 w-3" /> Liczba osób *
-              </Label>
-              <Input
-                id="addGuests"
-                type="number"
-                min={1}
-                value={addGuests}
-                onChange={(e) => setAddGuests(Math.max(1, Number(e.target.value) || 1))}
-              />
-            </div>
-            {state.days.length > 1 && (
-              <div>
-                <Label htmlFor="addDay" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Dzień
-                </Label>
-                <select
-                  id="addDay"
-                  value={addDayIndex}
-                  onChange={(e) => setAddDayIndex(Number(e.target.value))}
-                  className="border-input bg-surface h-10 w-full rounded-md border px-3 text-sm"
-                >
-                  {state.days.map((d) => (
-                    <option key={d.index} value={d.index}>
-                      Dzień {d.index}
-                      {d.date ? ` · ${formatDateShort(d.date)}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setPendingAdd(null)}>
-              Zamknij
-            </Button>
-            <Button
-              disabled={!addTime || !addEndTime || addGuests < 1}
-              onClick={commitAdd}
-              className="bg-accent text-accent-foreground hover:bg-accent-muted"
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Dodaj do Dnia {addDayIndex}
-            </Button>
-          </DialogFooter>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
