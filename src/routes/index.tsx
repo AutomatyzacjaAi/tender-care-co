@@ -486,80 +486,90 @@ function ConfigureStep() {
         </DialogContent>
       </Dialog>
 
-      {/* New section dialog */}
-      <Dialog open={!!newSectionFor} onOpenChange={(o) => !o && setNewSectionFor(null)}>
+      {/* Add-to-day dialog — wymusza godziny i osoby przy dodawaniu pozycji */}
+      <Dialog open={!!pendingAdd} onOpenChange={(o) => !o && setPendingAdd(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Nowa sekcja — Dzień {newSectionFor}
+            <DialogTitle className="font-serif">
+              Dodaj: {pendingAdd?.variant.name}
+              {pendingAdd?.menuId && (
+                <span className="text-muted-foreground text-sm font-normal">
+                  {" · "}
+                  {pendingAdd.variant.menus.find((m) => m.id === pendingAdd.menuId)?.name}
+                </span>
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="secName" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Nazwa kategorii
-              </Label>
-              <Input
-                id="secName"
-                placeholder="np. Przerwa kawowa, Lunch, Kolacja"
-                value={newSectionName}
-                onChange={(e) => setNewSectionName(e.target.value)}
-                autoFocus
-              />
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="secTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Od
+                <Label htmlFor="addTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Od *
                 </Label>
                 <Input
-                  id="secTime"
+                  id="addTime"
                   type="time"
-                  value={newSectionTime}
-                  onChange={(e) => setNewSectionTime(e.target.value)}
+                  value={addTime}
+                  onChange={(e) => setAddTime(e.target.value)}
+                  autoFocus
                 />
               </div>
               <div>
-                <Label htmlFor="secEndTime" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Do
+                <Label htmlFor="addEndTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Do *
                 </Label>
                 <Input
-                  id="secEndTime"
+                  id="addEndTime"
                   type="time"
-                  value={newSectionEndTime}
-                  onChange={(e) => setNewSectionEndTime(e.target.value)}
+                  value={addEndTime}
+                  onChange={(e) => setAddEndTime(e.target.value)}
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="secGuests" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                Liczba osób
+              <Label htmlFor="addGuests" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                <Users className="h-3 w-3" /> Liczba osób *
               </Label>
               <Input
-                id="secGuests"
+                id="addGuests"
                 type="number"
                 min={1}
-                value={newSectionGuests}
-                onChange={(e) => setNewSectionGuests(Math.max(1, Number(e.target.value) || 1))}
+                value={addGuests}
+                onChange={(e) => setAddGuests(Math.max(1, Number(e.target.value) || 1))}
               />
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                Tyle porcji policzymy z każdej pozycji menu dodanej do tej sekcji.
-              </p>
             </div>
+            {state.days.length > 1 && (
+              <div>
+                <Label htmlFor="addDay" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Dzień
+                </Label>
+                <select
+                  id="addDay"
+                  value={addDayIndex}
+                  onChange={(e) => setAddDayIndex(Number(e.target.value))}
+                  className="border-input bg-surface h-10 w-full rounded-md border px-3 text-sm"
+                >
+                  {state.days.map((d) => (
+                    <option key={d.index} value={d.index}>
+                      Dzień {d.index}
+                      {d.date ? ` · ${formatDateShort(d.date)}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setNewSectionFor(null)}
-            >
-              Anuluj
+            <Button variant="ghost" onClick={() => setPendingAdd(null)}>
+              Zamknij
             </Button>
             <Button
-              disabled={!newSectionName.trim() || newSectionGuests < 1}
-              onClick={commitNewSection}
+              disabled={!addTime || !addEndTime || addGuests < 1}
+              onClick={commitAdd}
               className="bg-accent text-accent-foreground hover:bg-accent-muted"
             >
-              Utwórz sekcję
+              <Plus className="mr-1 h-4 w-4" />
+              Dodaj do Dnia {addDayIndex}
             </Button>
           </DialogFooter>
         </DialogContent>
