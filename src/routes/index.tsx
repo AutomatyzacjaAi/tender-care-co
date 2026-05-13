@@ -51,11 +51,9 @@ function ConfigureStep() {
     removeDay,
     setDayDate,
     addSection,
-    removeSection,
-    updateSectionGuests,
-    setActiveSection,
     addItem,
     removeItem,
+    removeSection,
     totals,
   } = useOffer();
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -66,7 +64,6 @@ function ConfigureStep() {
     [activeCategoryId],
   );
   const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
-  // Sidebar tree state (e-commerce style) — pilot: Przerwa kawowa
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>("coffee-break");
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
   const [previewMenu, setPreviewMenu] = useState<{ variant: Variant; menuId: string } | null>(null);
@@ -80,16 +77,14 @@ function ConfigureStep() {
     return null;
   }, [activeVariantId]);
 
-  // New section dialog
-  const [newSectionFor, setNewSectionFor] = useState<number | null>(null);
-  const [newSectionName, setNewSectionName] = useState("");
-  const [newSectionTime, setNewSectionTime] = useState("");
-  const [newSectionEndTime, setNewSectionEndTime] = useState("");
-  const [newSectionGuests, setNewSectionGuests] = useState<number>(
-    state.contact.defaultGuests || 100,
-  );
+  // Add-to-day dialog (zastępuje wcześniejsze tworzenie sekcji)
+  const [pendingAdd, setPendingAdd] = useState<{ variant: Variant; menuId?: string } | null>(null);
+  const [addDayIndex, setAddDayIndex] = useState<number>(1);
+  const [addGuests, setAddGuests] = useState<number>(state.contact.defaultGuests || 100);
+  const [addTime, setAddTime] = useState<string>("");
+  const [addEndTime, setAddEndTime] = useState<string>("");
 
-  // Avoid SSR/CSR mismatch — days/sections come from localStorage
+  // Avoid SSR/CSR mismatch — days come from localStorage
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -104,60 +99,38 @@ function ConfigureStep() {
     }
   }, [mounted, state.contact.fullName, state.contact.email, navigate]);
 
-  const activeSectionId = state.activeSectionId;
-  const activeSection = useMemo(() => {
-    for (const d of state.days) {
-      const sec = d.sections.find((s) => s.id === activeSectionId);
-      if (sec) return { section: sec, dayIndex: d.index };
-    }
-    return null;
-  }, [state.days, activeSectionId]);
-
-  // Auto-select first section if none active
-  useEffect(() => {
-    if (!activeSectionId) {
-      const first = state.days.flatMap((d) => d.sections)[0];
-      if (first) setActiveSection(first.id);
-    }
-  }, [activeSectionId, state.days, setActiveSection]);
-
-  function openNewSection(dayIndex: number) {
-    setNewSectionFor(dayIndex);
-    setNewSectionName("");
-    setNewSectionTime("");
-    setNewSectionEndTime("");
-    setNewSectionGuests(state.contact.defaultGuests || 100);
+  function openAdd(variant: Variant, menuId?: string) {
+    setPendingAdd({ variant, menuId });
+    const firstDay = state.days[0]?.index ?? 1;
+    setAddDayIndex(firstDay);
+    setAddGuests(state.contact.defaultGuests || 100);
+    setAddTime("");
+    setAddEndTime("");
   }
 
-  function commitNewSection() {
-    if (newSectionFor === null) return;
-    const name = newSectionName.trim();
-    if (!name) return;
-    addSection(
-      newSectionFor,
-      name,
-      newSectionGuests,
-      newSectionTime || undefined,
-      newSectionEndTime || undefined,
-    );
-    toast.success(`Sekcja "${name}" utworzona — wybierz teraz menu.`);
-    setNewSectionFor(null);
-    setNewSectionName("");
-    setNewSectionTime("");
-    setNewSectionEndTime("");
+  function commitAdd() {
+    if (!pendingAdd) return;
+    if (!addTime || !addEndTime) {
+      toast.error("Uzupełnij godziny rozpoczęcia i zakończenia.");
+      return;
+    }
+    if (addGuests < 1) {
+      toast.error("Liczba osób musi być większa od 0.");
+      return;
+    }
+    const { variant, menuId } = pendingAdd;
+    const menuName = menuId ? variant.menus.find((m) => m.id === menuId)?.name : undefined;
+    const sectionName = menuName ? `${variant.name} · ${menuName}` : variant.name;
+    const sectionId = addSection(addDayIndex, sectionName, addGuests, addTime, addEndTime);
+    addItem(sectionId, variant.id, menuId, addGuests);
+    toast.success(`Dodano: ${sectionName} → Dzień ${addDayIndex}`);
+    setPendingAdd(null);
   }
 
   function handleAddVariant(variant: Variant, menuId?: string) {
-    if (!activeSectionId) {
-      toast.error("Najpierw utwórz lub wybierz sekcję na górze strony.");
-      return;
-    }
-    addItem(activeSectionId, variant.id, menuId);
-    const menuName = menuId ? variant.menus.find((m) => m.id === menuId)?.name : undefined;
-    toast.success(`Dodano: ${variant.name}${menuName ? ` · ${menuName}` : ""}`);
+    openAdd(variant, menuId);
   }
 
-  const totalSectionsCount = state.days.reduce((acc, d) => acc + d.sections.length, 0);
   const totalItemsCount = state.days.reduce(
     (acc, d) => acc + d.sections.reduce((a, s) => a + s.items.length, 0),
     0,
