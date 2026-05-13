@@ -388,7 +388,7 @@ function ConfigureStep() {
                     variant={variant}
                     onPreview={() => setPreviewVariant(variant)}
                     onAdd={() => handleAddVariant(variant)}
-                    canAdd={mounted && !!activeSection}
+                    canAdd={mounted}
                   />
                 ))}
               </div>
