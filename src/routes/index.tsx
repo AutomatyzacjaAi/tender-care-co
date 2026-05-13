@@ -305,33 +305,10 @@ function ConfigureStep() {
 
         {/* MIDDLE — Variants */}
         <section>
-          {/* Active section context strip */}
-          {mounted && activeSection ? (
-            <div className="border-accent/30 bg-accent-soft/60 mb-5 flex flex-col gap-1 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Wybierasz menu dla
-                </p>
-                <p className="text-accent font-serif text-lg font-medium">
-                  {activeSection.section.name}
-                  {(activeSection.section.time || activeSection.section.endTime) && (
-                    <span className="text-muted-foreground ml-2 text-sm font-normal">
-                      · {activeSection.section.time || "—"}
-                      {activeSection.section.endTime && ` – ${activeSection.section.endTime}`}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>{activeSection.section.guests} os.</span>
-                <span className="text-border mx-1">·</span>
-                <span>Dzień {activeSection.dayIndex}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="border-border bg-surface-sunken/60 mb-5 rounded-xl border border-dashed px-4 py-4 text-sm text-muted-foreground">
-              Najpierw utwórz sekcję na górze strony — np. „Lunch, 13:00, 80 os.” — a potem dodawaj do niej pozycje z menu.
+          {/* Hint */}
+          {mounted && state.days.length > 0 && (
+            <div className="border-border bg-surface-sunken/40 mb-5 rounded-xl border border-dashed px-4 py-3 text-xs text-muted-foreground sm:text-[13px]">
+              Wybierz pozycję z menu i kliknij <span className="text-foreground font-medium">Dodaj</span> — w okienku ustalisz godziny, liczbę osób i dzień, do którego ma trafić.
             </div>
           )}
 
