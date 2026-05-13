@@ -63,10 +63,8 @@ function ConfigureStep() {
     () => CATALOG.find((c) => c.id === activeCategoryId) ?? CATALOG[0],
     [activeCategoryId],
   );
-  const [previewVariant, setPreviewVariant] = useState<Variant | null>(null);
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>("coffee-break");
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
-  const [previewMenu, setPreviewMenu] = useState<{ variant: Variant; menuId: string } | null>(null);
 
   const activeVariant = useMemo(() => {
     if (!activeVariantId) return null;
