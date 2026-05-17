@@ -13,13 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { CATALOG, findVariant, type Variant } from "@/data/catalog";
 import { useOffer } from "@/context/OfferContext";
 import { PLN, formatDateShort } from "@/lib/format";
