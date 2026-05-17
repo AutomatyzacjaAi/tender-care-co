@@ -742,53 +742,19 @@ function VariantCard({
   onAdd: () => void;
   canAdd: boolean;
 }) {
-  const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
+  const items = variant.menus[0]?.items ?? [];
   return (
-    <article className="bg-surface-elevated border-border-soft group flex flex-col overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)]">
-      <div className="border-border-soft flex items-baseline justify-between gap-3 border-b px-4 py-3">
-        <h3 className="font-serif text-lg font-medium leading-tight text-foreground">
-          {variant.name}
-        </h3>
-        <div className="text-right shrink-0">
-          <p className="font-serif text-base font-medium text-foreground">
-            {PLN.format(variant.pricePerGuest)}
-          </p>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            {unitLabel}
-          </p>
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col px-4 py-3">
-        <p className="mb-2 text-xs text-muted-foreground italic">{variant.tagline}</p>
-        <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          W menu ({variant.menus[0]?.items.length ?? 0})
-        </p>
-        <ul className="mb-3 space-y-1 text-[13px] leading-snug text-foreground">
-          {(variant.menus[0]?.items ?? []).map((item, i) => (
-            <li key={i} className="flex gap-1.5">
-              <span className="text-accent mt-0.5">·</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-auto flex gap-2 pt-2">
-          <button
-            onClick={onPreview}
-            className="border-border-soft text-muted-foreground hover:text-foreground hover:bg-surface-sunken flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
-          >
-            Szczegóły
-          </button>
-          <button
-            onClick={onAdd}
-            disabled={!canAdd}
-            className="bg-accent text-accent-foreground hover:bg-accent-muted flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Dodaj
-          </button>
-        </div>
-      </div>
-    </article>
+    <MenuItemCard
+      title={variant.name}
+      netto={variant.pricePerGuest}
+      vatRate={variant.vatRate}
+      unit={variant.pricingUnit}
+      description={variant.tagline}
+      items={items}
+      onPreview={onPreview}
+      onAdd={onAdd}
+      canAdd={canAdd}
+    />
   );
 }
 
@@ -908,50 +874,112 @@ function MenuCard({
   onAdd: () => void;
   canAdd: boolean;
 }) {
-  const unitLabel = variant.pricingUnit === "per_guest" ? "/ osoba" : "/ szt";
+  return (
+    <MenuItemCard
+      title={menu.name}
+      netto={variant.pricePerGuest}
+      vatRate={variant.vatRate}
+      unit={variant.pricingUnit}
+      description={variant.tagline}
+      items={menu.items}
+      onPreview={onPreview}
+      onAdd={onAdd}
+      canAdd={canAdd}
+    />
+  );
+}
+
+function MenuItemCard({
+  title,
+  netto,
+  vatRate,
+  unit,
+  description,
+  items,
+  onPreview,
+  onAdd,
+  canAdd,
+}: {
+  title: string;
+  netto: number;
+  vatRate: number;
+  unit: "per_guest" | "per_piece";
+  description?: string;
+  items: string[];
+  onPreview: () => void;
+  onAdd: () => void;
+  canAdd: boolean;
+}) {
+  const unitLabel = unit === "per_guest" ? "/ os" : "/ szt";
+  const brutto = netto * (1 + vatRate);
+  const visible = items.slice(0, 5);
+  const remaining = Math.max(0, items.length - visible.length);
   return (
     <article className="bg-surface-elevated border-border-soft group flex flex-col overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.12)]">
-      <div className="border-border-soft flex items-baseline justify-between gap-3 border-b px-4 py-3">
+      {/* Header: nazwa + ceny netto/brutto */}
+      <div className="px-4 py-3">
         <h3 className="font-serif text-lg font-medium leading-tight text-foreground">
-          {menu.name}
+          {title}
         </h3>
-        <div className="text-right shrink-0">
-          <p className="font-serif text-base font-medium text-foreground">
-            {PLN.format(variant.pricePerGuest)}
+        <div className="mt-1.5 space-y-0.5">
+          <p className="text-[13px] text-muted-foreground">
+            <span className="font-medium text-foreground">{PLN.format(netto)}</span>{" "}
+            netto {unitLabel}
           </p>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            {unitLabel}
+          <p className="text-[13px] text-muted-foreground">
+            <span className="font-medium text-foreground">{PLN.format(brutto)}</span>{" "}
+            brutto {unitLabel}
           </p>
         </div>
       </div>
-      <div className="flex flex-1 flex-col px-4 py-3">
-        <p className="mb-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          W menu ({menu.items.length})
+
+      {/* Divider + opis */}
+      {description ? (
+        <div className="border-border-soft border-t px-4 py-3">
+          <p className="text-xs italic text-muted-foreground">{description}</p>
+        </div>
+      ) : null}
+
+      {/* Divider + W zestawie */}
+      <div className="border-border-soft flex flex-1 flex-col border-t px-4 py-3">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          W zestawie
         </p>
-        <ul className="mb-3 space-y-1 text-[13px] leading-snug text-foreground">
-          {menu.items.map((item, i) => (
+        <ul className="space-y-1 text-[13px] leading-snug text-foreground">
+          {visible.map((item, i) => (
             <li key={i} className="flex gap-1.5">
               <span className="text-accent mt-0.5">·</span>
               <span>{item}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-auto flex gap-2 pt-2">
+        {remaining > 0 ? (
           <button
+            type="button"
             onClick={onPreview}
-            className="border-border-soft text-muted-foreground hover:text-foreground hover:bg-surface-sunken flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+            className="text-accent hover:text-accent-muted mt-2 self-start text-xs font-medium underline-offset-2 hover:underline"
           >
-            Szczegóły
+            Zobacz więcej (+{remaining})
           </button>
-          <button
-            onClick={onAdd}
-            disabled={!canAdd}
-            className="bg-accent text-accent-foreground hover:bg-accent-muted flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Dodaj
-          </button>
-        </div>
+        ) : null}
+      </div>
+
+      {/* Divider + przyciski */}
+      <div className="border-border-soft flex gap-2 border-t px-4 py-3">
+        <button
+          onClick={onPreview}
+          className="border-border-soft text-muted-foreground hover:text-foreground hover:bg-surface-sunken flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+        >
+          Szczegóły
+        </button>
+        <button
+          onClick={onAdd}
+          disabled={!canAdd}
+          className="bg-accent text-accent-foreground hover:bg-accent-muted flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Dodaj
+        </button>
       </div>
     </article>
   );
