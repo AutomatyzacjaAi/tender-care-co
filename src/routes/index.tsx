@@ -135,25 +135,36 @@ function ConfigureStep() {
   );
 
   return (
-    <div className="bg-surface min-h-screen pb-20">
+    <div
+      className="bg-surface min-h-screen"
+      style={{ paddingBottom: summaryOpen ? "calc(60px + 40vh)" : "80px" }}
+    >
       <BrandHeader
         center={<Stepper />}
         right={
           <button
             type="button"
-            onClick={() => setSummaryOpen(true)}
-            disabled={!mounted || totalItemsCount === 0}
+            onClick={() => setSummaryOpen((o) => !o)}
+            disabled={!mounted}
             aria-label="Zobacz wybory"
+            aria-expanded={summaryOpen}
             className={cn(
               "flex items-center gap-3 rounded-full border px-4 py-1.5 transition-colors",
               "border-border-soft bg-surface text-foreground hover:bg-surface-sunken",
-              (!mounted || totalItemsCount === 0) && "cursor-not-allowed opacity-40",
+              !mounted && "cursor-not-allowed opacity-40",
             )}
-            title="Zobacz wybory"
+            title={summaryOpen ? "Ukryj wybory" : "Zobacz wybory"}
           >
             <ShoppingCart className="h-4 w-4" />
-            <span className="hidden text-sm font-medium sm:inline">Zobacz wybory</span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="hidden text-sm font-medium sm:inline">
+              {summaryOpen ? "Ukryj wybory" : "Zobacz wybory"}
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 text-muted-foreground transition-transform",
+                summaryOpen && "rotate-180",
+              )}
+            />
             <span className="border-border-soft hidden h-6 border-l sm:block" />
             <span className="text-left leading-tight">
               <span className="block text-[10px] text-muted-foreground">
