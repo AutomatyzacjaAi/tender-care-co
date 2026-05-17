@@ -13,13 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { CATALOG, findVariant, type Variant } from "@/data/catalog";
 import { useOffer } from "@/context/OfferContext";
 import { PLN, formatDateShort } from "@/lib/format";
@@ -56,7 +49,7 @@ function ConfigureStep() {
     removeSection,
     totals,
   } = useOffer();
-  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(true);
 
   const [activeCategoryId, setActiveCategoryId] = useState<string>(CATALOG[0].id);
   const activeCategory = useMemo(
@@ -135,25 +128,36 @@ function ConfigureStep() {
   );
 
   return (
-    <div className="bg-surface min-h-screen pb-20">
+    <div
+      className="bg-surface min-h-screen"
+      style={{ paddingBottom: summaryOpen ? "calc(60px + 40vh)" : "80px" }}
+    >
       <BrandHeader
         center={<Stepper />}
         right={
           <button
             type="button"
-            onClick={() => setSummaryOpen(true)}
-            disabled={!mounted || totalItemsCount === 0}
+            onClick={() => setSummaryOpen((o) => !o)}
+            disabled={!mounted}
             aria-label="Zobacz wybory"
+            aria-expanded={summaryOpen}
             className={cn(
               "flex items-center gap-3 rounded-full border px-4 py-1.5 transition-colors",
               "border-border-soft bg-surface text-foreground hover:bg-surface-sunken",
-              (!mounted || totalItemsCount === 0) && "cursor-not-allowed opacity-40",
+              !mounted && "cursor-not-allowed opacity-40",
             )}
-            title="Zobacz wybory"
+            title={summaryOpen ? "Ukryj wybory" : "Zobacz wybory"}
           >
             <ShoppingCart className="h-4 w-4" />
-            <span className="hidden text-sm font-medium sm:inline">Zobacz wybory</span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="hidden text-sm font-medium sm:inline">
+              {summaryOpen ? "Ukryj wybory" : "Zobacz wybory"}
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 text-muted-foreground transition-transform",
+                summaryOpen && "rotate-180",
+              )}
+            />
             <span className="border-border-soft hidden h-6 border-l sm:block" />
             <span className="text-left leading-tight">
               <span className="block text-[10px] text-muted-foreground">
@@ -394,9 +398,142 @@ function ConfigureStep() {
 
       </main>
 
+      {/* Docked summary panel — zawsze dostępny, otwiera się nad dolnym paskiem */}
+      {summaryOpen && mounted && (
+        <div
+          className="bg-surface-elevated border-border-soft fixed bottom-[60px] left-0 right-0 z-30 border-t shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)]"
+          style={{ maxHeight: "40vh" }}
+        >
+          <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col px-4 sm:px-6">
+            <div className="flex items-center justify-between gap-3 border-b border-border-soft py-2.5">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                <p className="font-serif text-base font-medium text-foreground">
+                  Twoje wybory
+                </p>
+                <span className="text-muted-foreground text-xs">
+                  · {totalItemsCount} {totalItemsCount === 1 ? "pozycja" : "pozycji"} ·{" "}
+                  <span className="text-foreground font-medium">
+                    {PLN.format(totals.brutto)}
+                  </span>{" "}
+                  brutto
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSummaryOpen(false)}
+                className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
+                aria-label="Zwiń wybory"
+                title="Zwiń"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto py-3" style={{ maxHeight: "calc(40vh - 48px)" }}>
+              {state.days.every((d) => d.sections.every((s) => s.items.length === 0)) ? (
+                <p className="text-muted-foreground py-6 text-center text-sm">
+                  Nie dodano jeszcze żadnych pozycji. Dodaj coś z menu po lewej — pojawi się tutaj od razu.
+                </p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {state.days.map((day) => {
+                    const dayHasItems = day.sections.some((s) => s.items.length > 0);
+                    if (!dayHasItems) return null;
+                    return (
+                      <div key={day.index}>
+                        <p className="mb-1.5 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                          Dzień {day.index}
+                          {day.date && (
+                            <span className="ml-2 normal-case tracking-normal">
+                              · {formatDateShort(day.date)}
+                            </span>
+                          )}
+                        </p>
+                        <div className="space-y-2">
+                          {day.sections.map((sec) => {
+                            if (sec.items.length === 0) return null;
+                            return (
+                              <div
+                                key={sec.id}
+                                className="border-border-soft bg-surface-sunken/40 rounded-lg border p-2.5"
+                              >
+                                <div className="mb-1 flex items-baseline justify-between gap-2">
+                                  <p className="text-foreground truncate font-serif text-sm">
+                                    {sec.name}
+                                    {(sec.time || sec.endTime) && (
+                                      <span className="text-muted-foreground ml-1.5 text-[11px] font-normal">
+                                        · {sec.time || "—"}
+                                        {sec.endTime && ` – ${sec.endTime}`}
+                                      </span>
+                                    )}
+                                  </p>
+                                  <span className="text-muted-foreground shrink-0 text-[11px]">
+                                    {sec.guests} os.
+                                  </span>
+                                </div>
+                                <ul className="space-y-1">
+                                  {sec.items.map((it) => {
+                                    const found = findVariant(it.variantId);
+                                    if (!found) return null;
+                                    const menuName = it.menuId
+                                      ? found.variant.menus.find((m) => m.id === it.menuId)?.name
+                                      : undefined;
+                                    const lineBrutto =
+                                      found.variant.pricePerGuest *
+                                      it.guests *
+                                      (1 + found.variant.vatRate);
+                                    return (
+                                      <li
+                                        key={it.id}
+                                        className="flex items-start justify-between gap-2 text-xs"
+                                      >
+                                        <div className="min-w-0 flex-1">
+                                          <p className="text-foreground truncate">
+                                            {found.variant.name}
+                                            {menuName && (
+                                              <span className="text-muted-foreground">
+                                                {" "}
+                                                · {menuName}
+                                              </span>
+                                            )}
+                                          </p>
+                                          <p className="text-muted-foreground text-[10px]">
+                                            {PLN.format(lineBrutto)} brutto
+                                          </p>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            removeItem(sec.id, it.id);
+                                            toast.success(`Usunięto: ${found.variant.name}`);
+                                          }}
+                                          className="text-muted-foreground hover:text-destructive shrink-0 rounded-md p-1 transition-colors"
+                                          aria-label={`Usuń ${found.variant.name}`}
+                                          title="Usuń pozycję"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sticky bottom bar — continue */}
       <div className="bg-surface-elevated/95 border-border-soft fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-end gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex h-[60px] w-full max-w-[1400px] items-center justify-end gap-3 px-4 sm:px-6">
           <Button
             onClick={() => navigate({ to: "/summary" })}
             disabled={!mounted || totalItemsCount === 0}
@@ -553,118 +690,6 @@ function ConfigureStep() {
         </DialogContent>
       </Dialog>
 
-      {/* Summary side sheet — przegląd dodanych pozycji */}
-      <Sheet open={summaryOpen} onOpenChange={setSummaryOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
-          <SheetHeader className="text-left">
-            <SheetTitle className="font-serif text-2xl">Twoje wybory</SheetTitle>
-            <SheetDescription>
-              Podgląd wszystkich pozycji dodanych do oferty. Możesz usunąć każdą z nich tutaj, bez wracania do kategorii.
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="mt-6 space-y-6">
-            {state.days.every((d) => d.sections.every((s) => s.items.length === 0)) ? (
-              <p className="text-muted-foreground text-sm">
-                Nie dodano jeszcze żadnych pozycji.
-              </p>
-            ) : (
-              state.days.map((day) => {
-                const dayHasItems = day.sections.some((s) => s.items.length > 0);
-                if (!dayHasItems) return null;
-                return (
-                  <div key={day.index}>
-                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                      Dzień {day.index}
-                      {day.date && (
-                        <span className="ml-2 normal-case tracking-normal">· {formatDateShort(day.date)}</span>
-                      )}
-                    </p>
-                    <div className="mt-2 space-y-3">
-                      {day.sections.map((sec) => {
-                        if (sec.items.length === 0) return null;
-                        return (
-                          <div
-                            key={sec.id}
-                            className="border-border-soft bg-surface-sunken/40 rounded-lg border p-3"
-                          >
-                            <div className="mb-2 flex items-baseline justify-between gap-2">
-                              <p className="text-foreground font-serif text-base">
-                                {sec.name}
-                                {(sec.time || sec.endTime) && (
-                                  <span className="text-muted-foreground ml-1.5 text-xs font-normal">
-                                    · {sec.time || "—"}
-                                    {sec.endTime && ` – ${sec.endTime}`}
-                                  </span>
-                                )}
-                              </p>
-                              <span className="text-muted-foreground text-[11px]">
-                                {sec.guests} os.
-                              </span>
-                            </div>
-                            <ul className="space-y-1.5">
-                              {sec.items.map((it) => {
-                                const found = findVariant(it.variantId);
-                                if (!found) return null;
-                                const menuName = it.menuId
-                                  ? found.variant.menus.find((m) => m.id === it.menuId)?.name
-                                  : undefined;
-                                const lineNet = found.variant.pricePerGuest * it.guests;
-                                const lineBrutto = lineNet * (1 + found.variant.vatRate);
-                                return (
-                                  <li
-                                    key={it.id}
-                                    className="flex items-start justify-between gap-2 text-sm"
-                                  >
-                                    <div className="min-w-0 flex-1">
-                                      <p className="text-foreground truncate">
-                                        {found.variant.name}
-                                        {menuName && (
-                                          <span className="text-muted-foreground"> · {menuName}</span>
-                                        )}
-                                      </p>
-                                      <p className="text-muted-foreground text-[11px]">
-                                        {found.category.name} · {PLN.format(lineBrutto)}
-                                      </p>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        removeItem(sec.id, it.id);
-                                        toast.success(`Usunięto: ${found.variant.name}`);
-                                      }}
-                                      className="text-muted-foreground hover:text-destructive shrink-0 rounded-md p-1.5 transition-colors"
-                                      aria-label={`Usuń ${found.variant.name}`}
-                                      title="Usuń pozycję"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <div className="border-border-soft mt-8 border-t pt-4">
-            <div className="flex items-baseline justify-between">
-              <span className="text-muted-foreground text-xs uppercase tracking-[0.14em]">
-                Razem brutto
-              </span>
-              <span className="font-serif text-xl font-medium text-foreground">
-                {PLN.format(totals.brutto)}
-              </span>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
