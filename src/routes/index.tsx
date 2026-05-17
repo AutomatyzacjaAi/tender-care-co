@@ -903,7 +903,7 @@ function MenuItemCard({
   title: string;
   netto: number;
   vatRate: number;
-  unit: "per_guest" | "per_piece";
+  unit: "per_guest" | "per_unit";
   description?: string;
   items: string[];
   onPreview: () => void;
