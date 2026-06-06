@@ -126,6 +126,38 @@ function ConfigureStep() {
     openAdd(variant, menuId);
   }
 
+  function openCustomAdd() {
+    if (customDishIds.length === 0) {
+      toast.error("Dodaj najpierw choć jedno danie do menu.");
+      return;
+    }
+    const firstDay = state.days[0]?.index ?? 1;
+    setAddDayIndex(firstDay);
+    setAddGuests(state.contact.defaultGuests || 100);
+    setAddTime("");
+    setAddEndTime("");
+    setCustomAddOpen(true);
+  }
+
+  function commitCustomMenu() {
+    if (!addTime || !addEndTime) {
+      toast.error("Uzupełnij godziny rozpoczęcia i zakończenia.");
+      return;
+    }
+    if (addGuests < 1) {
+      toast.error("Liczba osób musi być większa od 0.");
+      return;
+    }
+    if (customDishIds.length === 0) return;
+    const sectionId = addSection(addDayIndex, "Menu indywidualne", addGuests, addTime, addEndTime);
+    for (const dishId of customDishIds) {
+      addItem(sectionId, dishId, undefined, addGuests);
+    }
+    toast.success(`Dodano menu indywidualne (${customDishIds.length} dań) → Dzień ${addDayIndex}`);
+    setCustomDishIds([]);
+    setCustomAddOpen(false);
+  }
+
   const totalItemsCount = state.days.reduce(
     (acc, d) => acc + d.sections.reduce((a, s) => a + s.items.length, 0),
     0,
