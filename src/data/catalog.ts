@@ -15,6 +15,14 @@ export type MenuOption = {
   items: string[]; // pozycje w menu
 };
 
+export type DishSubcategory =
+  | "Zupa"
+  | "Danie główne"
+  | "Dodatek"
+  | "Sałatka"
+  | "Deser"
+  | "Finger food";
+
 export type Variant = {
   id: string;
   name: string; // np. "Wariant 1"
@@ -24,6 +32,7 @@ export type Variant = {
   vatRate: number;
   image: string;
   menus: MenuOption[]; // wybór menu w danej cenie
+  subcategory?: DishSubcategory; // tylko dla menu indywidualnego
 };
 
 export type Category = {
@@ -510,7 +519,106 @@ export const CATALOG: Category[] = [
   },
 ];
 
+// ===== Menu indywidualne — pojedyncze dania jako warianty =====
+function dish(
+  id: string,
+  name: string,
+  subcategory: DishSubcategory,
+  pricePerGuest: number,
+): Variant {
+  return {
+    id,
+    name,
+    tagline: subcategory,
+    pricePerGuest,
+    pricingUnit: "per_guest",
+    vatRate: 0.08,
+    image: lunch,
+    menus: singleMenu([name]),
+    subcategory,
+  };
+}
+
+const INDIVIDUAL_DISHES: Variant[] = [
+  // Zupy
+  dish("dish-z1", "Krem z dyni z imbirem", "Zupa", 14),
+  dish("dish-z2", "Rosół drobiowy z makaronem", "Zupa", 12),
+  dish("dish-z3", "Krem z białych warzyw z truflą", "Zupa", 18),
+  dish("dish-z4", "Żurek z jajkiem i białą kiełbasą", "Zupa", 15),
+  dish("dish-z5", "Krem pomidorowy z bazylią", "Zupa", 13),
+  dish("dish-z6", "Krem z brokułów z migdałami", "Zupa", 14),
+  dish("dish-z7", "Krem z borowików", "Zupa", 18),
+  dish("dish-z8", "Bulion z kołdunami", "Zupa", 16),
+  dish("dish-z9", "Krem z buraków z kozim serem", "Zupa", 15),
+  dish("dish-z10", "Tom kha gai", "Zupa", 19),
+  // Dania główne
+  dish("dish-d1", "Pierś z kurczaka grillowana", "Danie główne", 32),
+  dish("dish-d2", "Polędwiczki wieprzowe w sosie kurkowym", "Danie główne", 38),
+  dish("dish-d3", "Polędwica wołowa sous-vide", "Danie główne", 58),
+  dish("dish-d4", "Pierś z kaczki z purée z selera", "Danie główne", 52),
+  dish("dish-d5", "Dorsz pieczony z masłem cytrynowym", "Danie główne", 44),
+  dish("dish-d6", "Łosoś grillowany ze szpinakiem", "Danie główne", 48),
+  dish("dish-d7", "Risotto z borowikami (wege)", "Danie główne", 34),
+  dish("dish-d8", "Gnocchi z dynią i szałwią (wege)", "Danie główne", 30),
+  dish("dish-d9", "Schab pieczony z jabłkiem", "Danie główne", 28),
+  dish("dish-d10", "Pad thai z krewetkami", "Danie główne", 42),
+  // Dodatki
+  dish("dish-do1", "Ziemniaki opiekane z rozmarynem", "Dodatek", 8),
+  dish("dish-do2", "Purée ziemniaczane", "Dodatek", 7),
+  dish("dish-do3", "Kasza pęczak z warzywami", "Dodatek", 8),
+  dish("dish-do4", "Ryż jaśminowy", "Dodatek", 6),
+  dish("dish-do5", "Warzywa pieczone (mix)", "Dodatek", 9),
+  dish("dish-do6", "Buraki z kozim serem", "Dodatek", 10),
+  dish("dish-do7", "Kluski śląskie", "Dodatek", 8),
+  dish("dish-do8", "Frytki belgijskie", "Dodatek", 7),
+  // Sałatki
+  dish("dish-s1", "Caprese z mozzarellą di bufala", "Sałatka", 16),
+  dish("dish-s2", "Caesar z kurczakiem", "Sałatka", 18),
+  dish("dish-s3", "Grecka klasyczna", "Sałatka", 14),
+  dish("dish-s4", "Z burakami i kozim serem", "Sałatka", 15),
+  dish("dish-s5", "Z grillowanym halloumi", "Sałatka", 17),
+  // Desery
+  dish("dish-de1", "Panna cotta z owocami leśnymi", "Deser", 14),
+  dish("dish-de2", "Mus czekoladowy", "Deser", 13),
+  dish("dish-de3", "Tarta cytrynowa z bezą", "Deser", 15),
+  dish("dish-de4", "Tiramisu", "Deser", 16),
+  dish("dish-de5", "Sernik wiedeński", "Deser", 12),
+  dish("dish-de6", "Brownie z malinami", "Deser", 12),
+  // Finger food
+  dish("dish-f1", "Tartinka z łososiem i serkiem", "Finger food", 8),
+  dish("dish-f2", "Mini quiche lorraine", "Finger food", 7),
+  dish("dish-f3", "Bruschetta pomidorowa", "Finger food", 6),
+  dish("dish-f4", "Tatar wołowy w łyżeczce", "Finger food", 12),
+  dish("dish-f5", "Krewetki w tempurze", "Finger food", 14),
+  dish("dish-f6", "Mini-kanapka z szynką parmeńską", "Finger food", 9),
+  dish("dish-f7", "Wrap z kurczakiem mini", "Finger food", 8),
+  dish("dish-f8", "Caprese na patyku", "Finger food", 7),
+];
+
+CATALOG.push({
+  id: "menu-indywidualne",
+  name: "Menu indywidualne",
+  symbol: "09",
+  description:
+    "Skomponuj własne menu z bazy pojedynczych dań — zupy, dania główne, dodatki, desery, finger food.",
+  variants: INDIVIDUAL_DISHES,
+});
+
+export const DISH_SUBCATEGORIES: DishSubcategory[] = [
+  "Zupa",
+  "Danie główne",
+  "Dodatek",
+  "Sałatka",
+  "Deser",
+  "Finger food",
+];
+
+export function getIndividualDishes(): Variant[] {
+  return INDIVIDUAL_DISHES;
+}
+
 export const VAT_LABEL: Record<number, string> = {
+
   0.05: "5%",
   0.08: "8%",
   0.23: "23%",
