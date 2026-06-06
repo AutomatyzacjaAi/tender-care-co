@@ -733,7 +733,95 @@ function ConfigureStep() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog — dodanie menu indywidualnego do dnia */}
+      <Dialog open={customAddOpen} onOpenChange={setCustomAddOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">
+              Dodaj menu indywidualne do dnia
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground text-sm">
+            {customDishIds.length}{" "}
+            {customDishIds.length === 1 ? "pozycja" : "pozycji"} w menu.
+          </p>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="cAddTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Od *
+                </Label>
+                <Input
+                  id="cAddTime"
+                  type="time"
+                  value={addTime}
+                  onChange={(e) => setAddTime(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <Label htmlFor="cAddEndTime" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  <Clock className="h-3 w-3" /> Do *
+                </Label>
+                <Input
+                  id="cAddEndTime"
+                  type="time"
+                  value={addEndTime}
+                  onChange={(e) => setAddEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="cAddGuests" className="mb-1.5 flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                <Users className="h-3 w-3" /> Liczba osób *
+              </Label>
+              <Input
+                id="cAddGuests"
+                type="number"
+                min={1}
+                value={addGuests}
+                onChange={(e) => setAddGuests(Math.max(1, Number(e.target.value) || 1))}
+              />
+            </div>
+            {state.days.length > 1 && (
+              <div>
+                <Label htmlFor="cAddDay" className="mb-1.5 block text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  Dzień
+                </Label>
+                <select
+                  id="cAddDay"
+                  value={addDayIndex}
+                  onChange={(e) => setAddDayIndex(Number(e.target.value))}
+                  className="border-input bg-surface h-10 w-full rounded-md border px-3 text-sm"
+                >
+                  {state.days.map((d) => (
+                    <option key={d.index} value={d.index}>
+                      Dzień {d.index}
+                      {d.date ? ` · ${formatDateShort(d.date)}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button variant="ghost" onClick={() => setCustomAddOpen(false)}>
+              Zamknij
+            </Button>
+            <Button
+              disabled={!addTime || !addEndTime || addGuests < 1}
+              onClick={commitCustomMenu}
+              className="bg-accent text-accent-foreground hover:bg-accent-muted"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Dodaj do Dnia {addDayIndex}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
+
   );
 }
 
