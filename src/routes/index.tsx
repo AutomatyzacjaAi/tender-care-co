@@ -350,7 +350,14 @@ function ConfigureStep() {
             </div>
           )}
 
-          {activeCategory.id === "coffee-break" ? (
+          {activeCategory.id === "menu-indywidualne" ? (
+            <CustomMenuBuilder
+              dishIds={customDishIds}
+              onChange={setCustomDishIds}
+              onCommit={openCustomAdd}
+              canAdd={mounted}
+            />
+          ) : activeCategory.id === "coffee-break" ? (
             <>
               <div className="mb-6">
                 <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
