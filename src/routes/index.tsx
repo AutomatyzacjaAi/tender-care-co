@@ -75,6 +75,10 @@ function ConfigureStep() {
   const [addTime, setAddTime] = useState<string>("");
   const [addEndTime, setAddEndTime] = useState<string>("");
 
+  // Menu indywidualne — lokalny koszyk dań i osobny dialog
+  const [customDishIds, setCustomDishIds] = useState<string[]>([]);
+  const [customAddOpen, setCustomAddOpen] = useState<boolean>(false);
+
   // Avoid SSR/CSR mismatch — days come from localStorage
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
