@@ -1140,3 +1140,235 @@ function MenuItemCard({
     </article>
   );
 }
+
+function CustomMenuBuilder({
+  dishIds,
+  onChange,
+  onCommit,
+  canAdd,
+}: {
+  dishIds: string[];
+  onChange: (next: string[]) => void;
+  onCommit: () => void;
+  canAdd: boolean;
+}) {
+  const dishes = useMemo(() => getIndividualDishes(), []);
+  const [query, setQuery] = useState("");
+  const [activeSub, setActiveSub] = useState<DishSubcategory | "Wszystkie">("Wszystkie");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return dishes.filter((d) => {
+      if (activeSub !== "Wszystkie" && d.subcategory !== activeSub) return false;
+      if (q && !d.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [dishes, query, activeSub]);
+
+  const selectedDishes = useMemo(() => {
+    return dishIds
+      .map((id) => dishes.find((d) => d.id === id))
+      .filter((d): d is Variant => !!d);
+  }, [dishIds, dishes]);
+
+  const totalNettoPerGuest = selectedDishes.reduce((s, d) => s + d.pricePerGuest, 0);
+  const totalBruttoPerGuest = selectedDishes.reduce(
+    (s, d) => s + d.pricePerGuest * (1 + d.vatRate),
+    0,
+  );
+
+  function addDish(id: string) {
+    if (dishIds.includes(id)) {
+      toast.info("To danie jest już w menu.");
+      return;
+    }
+    onChange([...dishIds, id]);
+  }
+  function removeDish(id: string) {
+    onChange(dishIds.filter((x) => x !== id));
+  }
+
+  return (
+    <>
+      <div className="mb-6">
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          09 · Kategoria
+        </p>
+        <h2 className="mt-1 font-serif text-3xl font-medium text-foreground sm:text-4xl">
+          Menu indywidualne
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Skomponuj własne menu wybierając dania z bazy. Cena rośnie w czasie
+          rzeczywistym. Liczba osób ustalana jest jedna — dla całego menu.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+        {/* LEWA — koszyk / robocze menu */}
+        <div className="bg-surface-elevated border-border-soft rounded-2xl border p-4 sm:p-5">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h3 className="font-serif text-lg font-medium text-foreground">
+              Twoje menu
+            </h3>
+            <span className="text-muted-foreground text-xs">
+              {selectedDishes.length}{" "}
+              {selectedDishes.length === 1 ? "pozycja" : "pozycji"}
+            </span>
+          </div>
+          {selectedDishes.length === 0 ? (
+            <div className="border-border bg-surface-sunken/40 rounded-xl border border-dashed px-4 py-10 text-center">
+              <p className="text-muted-foreground text-sm">
+                Wybierz dania z listy po prawej — pojawią się tutaj.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-border-soft divide-y">
+              {selectedDishes.map((d) => {
+                const brutto = d.pricePerGuest * (1 + d.vatRate);
+                return (
+                  <li key={d.id} className="flex items-center gap-3 py-2.5">
+                    <span className="text-muted-foreground bg-surface-sunken w-20 shrink-0 rounded px-2 py-0.5 text-center text-[10px] uppercase tracking-widest">
+                      {d.subcategory}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-foreground truncate text-sm font-medium">
+                        {d.name}
+                      </p>
+                      <p className="text-muted-foreground text-[11px]">
+                        {PLN.format(d.pricePerGuest)} netto · {PLN.format(brutto)} brutto / os
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeDish(d.id)}
+                      className="text-muted-foreground hover:text-destructive shrink-0 rounded-md p-1.5 transition-colors"
+                      aria-label={`Usuń ${d.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {selectedDishes.length > 0 && (
+            <div className="border-border-soft mt-3 flex flex-wrap items-end justify-between gap-3 border-t pt-3">
+              <div>
+                <p className="text-muted-foreground text-[10px] uppercase tracking-[0.14em]">
+                  Łącznie / os
+                </p>
+                <p className="font-serif text-xl font-medium text-foreground">
+                  {PLN.format(totalBruttoPerGuest)}
+                  <span className="text-muted-foreground ml-1.5 text-xs">brutto</span>
+                </p>
+                <p className="text-muted-foreground text-[11px]">
+                  {PLN.format(totalNettoPerGuest)} netto
+                </p>
+              </div>
+              <Button
+                onClick={onCommit}
+                disabled={!canAdd}
+                className="bg-accent text-accent-foreground hover:bg-accent-muted"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Dodaj menu do dnia
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* PRAWA — baza dań */}
+        <aside className="bg-surface-elevated border-border-soft rounded-2xl border p-4 sm:p-5">
+          <h3 className="font-serif text-lg font-medium text-foreground">
+            Baza dań
+          </h3>
+          <p className="text-muted-foreground mb-3 text-[11px]">
+            Wyszukaj lub przefiltruj kategorią.
+          </p>
+
+          <div className="relative mb-3">
+            <Search className="text-muted-foreground absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
+            <Input
+              type="text"
+              placeholder="Szukaj dania…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-8 pr-8"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2 p-1"
+                aria-label="Wyczyść"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {(["Wszystkie", ...DISH_SUBCATEGORIES] as const).map((sub) => {
+              const isActive = activeSub === sub;
+              return (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => setActiveSub(sub)}
+                  className={cn(
+                    "rounded-full border px-2.5 py-0.5 text-[11px] transition-colors",
+                    isActive
+                      ? "bg-accent border-accent text-accent-foreground"
+                      : "border-border bg-surface text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {sub}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="max-h-[60vh] overflow-y-auto pr-1">
+            {filtered.length === 0 ? (
+              <p className="text-muted-foreground py-6 text-center text-xs">
+                Brak wyników.
+              </p>
+            ) : (
+              <ul className="divide-border-soft divide-y">
+                {filtered.map((d) => {
+                  const added = dishIds.includes(d.id);
+                  return (
+                    <li key={d.id} className="flex items-center gap-2 py-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-foreground truncate text-sm">{d.name}</p>
+                        <p className="text-muted-foreground text-[10px]">
+                          {d.subcategory} · {PLN.format(d.pricePerGuest)} netto / os
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addDish(d.id)}
+                        disabled={added}
+                        className={cn(
+                          "flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+                          added
+                            ? "bg-surface-sunken text-muted-foreground cursor-not-allowed"
+                            : "bg-accent text-accent-foreground hover:bg-accent-muted",
+                        )}
+                      >
+                        <Plus className="h-3 w-3" />
+                        {added ? "Dodano" : "Dodaj"}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </aside>
+      </div>
+    </>
+  );
+}
+
