@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CATALOG, findVariant, type Variant } from "@/data/catalog";
+import { CATALOG, DISH_SUBCATEGORIES, findVariant, getIndividualDishes, type DishSubcategory, type Variant } from "@/data/catalog";
 import { useOffer } from "@/context/OfferContext";
 import { PLN, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
