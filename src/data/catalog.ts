@@ -617,6 +617,8 @@ export function getIndividualDishes(): Variant[] {
   return INDIVIDUAL_DISHES;
 }
 
+export const VAT_LABEL: Record<number, string> = {
+
   0.05: "5%",
   0.08: "8%",
   0.23: "23%",
