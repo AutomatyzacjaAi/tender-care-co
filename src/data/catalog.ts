@@ -15,6 +15,14 @@ export type MenuOption = {
   items: string[]; // pozycje w menu
 };
 
+export type DishSubcategory =
+  | "Zupa"
+  | "Danie główne"
+  | "Dodatek"
+  | "Sałatka"
+  | "Deser"
+  | "Finger food";
+
 export type Variant = {
   id: string;
   name: string; // np. "Wariant 1"
@@ -24,6 +32,7 @@ export type Variant = {
   vatRate: number;
   image: string;
   menus: MenuOption[]; // wybór menu w danej cenie
+  subcategory?: DishSubcategory; // tylko dla menu indywidualnego
 };
 
 export type Category = {
